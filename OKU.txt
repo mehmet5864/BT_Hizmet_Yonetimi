@@ -1,0 +1,18 @@
+BT Hizmet Yonetimi  1.0.1
+
+Docker Desktop (PostgreSQL ile, Node.js gerekmez):
+  Zip'i Docker penceresine SURUKLEMEYIN.
+  1. Docker Desktop acik, balina sabit.
+  2. Windows:  install-docker.bat   (ilk kurulum / guncelleme)
+     macOS/Linux:  ./install-docker.sh
+  3. Sonra:  baslat-docker.bat   Durdur: durdur-docker.bat
+  4. down -v YASAK (veritabanini siler).
+
+Sunucu (on-premise): ON-PREMISE-KURULUM.md
+Lisans: Ayarlar > Lisans (anahtar yoksa kisitli mod: 25 kullanici, cekirdek moduller).
+Yedek: yedekle-docker.bat   Geri yukle: geri-yukle-docker.bat <dosya>
+
+Tarayici: http://127.0.0.1:43130
+Giris: ahmet.yilmaz   Parola: Kurum123!
+
+Ayrinti: KURULUM.md  ve  SURUM.md

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 500" role="img" aria-label="España">
+  <rect width="750" height="500" fill="#AA151B"/>
+  <rect y="125" width="750" height="250" fill="#F1BF00"/>
+  <g transform="translate(168 168)">
+    <rect x="-36" y="28" width="12" height="132" rx="2" fill="#C4A35A"/>
+    <rect x="174" y="28" width="12" height="132" rx="2" fill="#C4A35A"/>
+    <circle cx="-30" cy="24" r="10" fill="#C4A35A"/>
+    <circle cx="180" cy="24" r="10" fill="#C4A35A"/>
+    <rect x="-48" y="70" width="36" height="10" rx="2" fill="#AA151B"/>
+    <rect x="162" y="70" width="36" height="10" rx="2" fill="#AA151B"/>
+    <path d="M18 18h114c6 0 10 4 10 10v78c0 36-57 62-67 68-10-6-67-32-67-68V28c0-6 4-10 10-10z" fill="#F4E7C3" stroke="#7A1F16" stroke-width="4"/>
+    <path d="M20 30h54v48H20z" fill="#AA151B"/>
+    <path fill="#F1BF00" d="M38 40h18v8H48v6h8v8h-8v10h-10V62h-8v-8h8v-6h-8z"/>
+    <path d="M74 30h54v48H74z" fill="#F4E7C3"/>
+    <path fill="#8B1E6D" d="M92 38c10-8 28-2 28 14 0 16-10 24-20 32-10-8-20-16-20-32 0-8 4-14 12-14z"/>
+    <path d="M20 78h54v48H20z" fill="#F1BF00"/>
+    <path stroke="#AA151B" stroke-width="7" d="M20 90h54M20 106h54M20 122h54"/>
+    <path d="M74 78h54v48H74z" fill="#AA151B"/>
+    <path fill="none" stroke="#F1BF00" stroke-width="3" d="M86 90h30M86 106h30M86 122h30M101 82v40"/>
+    <path fill="#AA151B" d="M64 126c8 10 22 10 30 0v8c-10 12-20 12-30 0z"/>
+    <path fill="#F1BF00" d="M70 8h20l6 12H64z"/>
+    <path fill="#AA151B" d="M74 2h12v10H74z"/>
+  </g>
+</svg>

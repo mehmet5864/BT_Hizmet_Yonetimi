@@ -1,0 +1,249 @@
+﻿docker : --progress is a global compose flag, better use `docker compose --progress xx build ...
+At line:1 char:1
++ docker compose build --progress plain envanter 2>&1 | Out-File build- ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (--progress is a...ss xx build ...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ Image envanter-yonetim:v4 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 674B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.81kB done
+#2 DONE 0.0s
+
+#3 [auth] library/node:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/library/node:22-bookworm-slim
+#4 DONE 0.9s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 292B done
+#5 DONE 0.0s
+
+#6 [base 1/3] FROM docker.io/library/node:22-bookworm-slim@sha256:c3de60bf2f9dd0ac6370e6117950ff62d6e339527e7472301c9c78a017978392
+#6 resolve docker.io/library/node:22-bookworm-slim@sha256:c3de60bf2f9dd0ac6370e6117950ff62d6e339527e7472301c9c78a017978392 0.0s done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 27.13kB 0.0s done
+#7 DONE 0.0s
+
+#8 [base 3/3] RUN apt-get update   && apt-get install -y --no-install-recommends openssl ca-certificates fonts-dejavu-core   && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [deps 1/2] COPY package.json package-lock.json* ./
+#9 CACHED
+
+#10 [base 2/3] WORKDIR /app
+#10 CACHED
+
+#11 [builder 1/3] COPY --from=deps /app/node_modules ./node_modules
+#11 CACHED
+
+#12 [deps 2/2] RUN npm install --no-audit --no-fund
+#12 CACHED
+
+#13 [runner  1/13] WORKDIR /app
+#13 CACHED
+
+#14 [runner  2/13] COPY --from=deps /app/node_modules ./node_modules
+#14 CACHED
+
+#15 [builder 2/3] COPY . .
+#15 DONE 0.1s
+
+#16 [builder 3/3] RUN npx prisma generate && npm run build
+#16 0.836 Loaded Prisma config from prisma.config.ts.
+#16 0.836 
+#16 0.866 Prisma schema loaded from prisma/schema.prisma.
+#16 1.432 
+#16 1.432 Ô£ö Generated Prisma Client (7.10.0) to ./src/generated/prisma in 338ms
+#16 1.432 
+#16 1.457 npm notice
+#16 1.457 npm notice New major version of npm available! 10.9.9 -> 12.2.0
+#16 1.457 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+#16 1.457 npm notice To update run: npm install -g npm@12.2.0
+#16 1.457 npm notice
+#16 1.538 
+#16 1.538 > envanter-yonetim@4.3.2 build
+#16 1.538 > next build
+#16 1.538 
+#16 1.743 Ôû▓ Next.js 16.3.6 (Turbopack)
+#16 1.759 Ô£ô Running next.config.ts took 15ms
+#16 1.766 
+#16 1.767 ÔÜá The "middleware" file convention is deprecated. Please use "proxy" instead.
+#16 1.767 
+#16 1.767   To migrate automatically, run:
+#16 1.767   npx @next/codemod@canary middleware-to-proxy .
+#16 1.767 
+#16 1.767   Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+#16 1.788   Creating an optimized production build ...
+#16 6.748 Ô£ô Compiled successfully in 4.8s
+#16 6.751   Running TypeScript ...
+#16 14.19 src/lib/workflow/engine.ts(105,55): error TS2339: Property 'nodeId' does not exist on type 'AdvanceResult'.
+#16 14.19   Property 'nodeId' does not exist on type '{ state: "REJECTED" | "APPROVED"; }'.
+#16 14.25 Failed to type check.
+#16 14.25 
+#16 14.25 Turbopack build encountered 4 warnings:
+#16 14.25 ./src/lib/license.ts:114:19
+#16 14.25 Warning: Dynamic filesystem access causes tracing of the whole project
+#16 14.25   [90m112 |[0m   [36mlet[0m text: string | [36mnull[0m = [36mnull[0m;
+#16 14.25   [90m113 |[0m   [36mtry[0m {
+#16 14.25 [33m[1m>[0m [90m114 |[0m     text = ([36mawait[0m readFile(licensePath(), [32m"utf8"[0m)).trim() || [36mnull[0m;
+#16 14.25   [90m    |[0m                   [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+#16 14.25   [90m115 |[0m   } [36mcatch[0m {
+#16 14.25   [90m116 |[0m     text = [36mnull[0m;
+#16 14.25   [90m117 |[0m   }
+#16 14.25 
+#16 14.25 Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+#16 14.25 This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+#16 14.25 This can slow down deployments or lead to failures when size limits are exceeded.
+#16 14.25 To resolve this, you can
+#16 14.25 - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+#16 14.25 - only use them in development, or
+#16 14.25 - opt out by adding an ignore comment to the highlighted call: fs.readFile(/*turbopackIgnore: true*/ ...), or
+#16 14.25 - remove them.
+#16 14.25 
+#16 14.25 Import traces:
+#16 14.25   #1 [Server Component]:
+#16 14.25     ./src/lib/license.ts
+#16 14.25     ./src/lib/actions/catalog.ts
+#16 14.25 
+#16 14.25   #2 [App Route]:
+#16 14.25     ./src/lib/license.ts
+#16 14.25     ./src/lib/release-zip.ts
+#16 14.25     ./src/app/api/paket/route.ts
+#16 14.25 
+#16 14.25   #3 [Server Component]:
+#16 14.25     ./src/lib/license.ts
+#16 14.25     ./src/components/app-chrome.tsx
+#16 14.25     ./src/app/layout.tsx
+#16 14.25 
+#16 14.25 
+#16 14.25 ./src/lib/release-zip.ts:30:10
+#16 14.25 Warning: Dynamic filesystem access causes tracing of the whole project
+#16 14.25   [90m28 |[0m
+#16 14.25   [90m29 |[0m   [36mfor[0m ([36mconst[0m root [36mof[0m roots) {
+#16 14.25 [33m[1m>[0m [90m30 |[0m     [36mif[0m (!existsSync(root)) [36mcontinue[0m;
+#16 14.25   [90m   |[0m          [33m[1m^^^^^^^^^^^^^^^^[0m
+#16 14.25   [90m31 |[0m     [36mfor[0m ([36mconst[0m name [36mof[0m readdirSync(root)) {
+#16 14.25   [90m32 |[0m       [36mconst[0m match = name.match([33mVERSIONED[0m);
+#16 14.25   [90m33 |[0m       [36mif[0m (!match) [36mcontinue[0m;
+#16 14.25 
+#16 14.25 Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+#16 14.25 This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+#16 14.25 This can slow down deployments or lead to failures when size limits are exceeded.
+#16 14.25 To resolve this, you can
+#16 14.25 - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+#16 14.25 - only use them in development, or
+#16 14.25 - opt out by adding an ignore comment to the highlighted call: fs.existsSync(/*turbopackIgnore: true*/ ...), or
+#16 14.25 - remove them.
+#16 14.25 
+#16 14.25 Import traces:
+#16 14.25   App Route:
+#16 14.25     ./src/lib/release-zip.ts
+#16 14.25     ./src/app/api/paket/route.ts
+#16 14.25 
+#16 14.25   Server Component:
+#16 14.25     ./src/lib/release-zip.ts
+#16 14.25     ./src/app/indir/page.tsx
+#16 14.25 
+#16 14.25 
+#16 14.25 ./src/lib/release-zip.ts:31:24
+#16 14.25 Warning: Dynamic filesystem access causes tracing of the whole project
+#16 14.25   [90m29 |[0m   [36mfor[0m ([36mconst[0m root [36mof[0m roots) {
+#16 14.25   [90m30 |[0m     [36mif[0m (!existsSync(root)) [36mcontinue[0m;
+#16 14.25 [33m[1m>[0m [90m31 |[0m     [36mfor[0m ([36mconst[0m name [36mof[0m readdirSync(root)) {
+#16 14.25   [90m   |[0m                        [33m[1m^^^^^^^^^^^^^^^^^[0m
+#16 14.25   [90m32 |[0m       [36mconst[0m match = name.match([33mVERSIONED[0m);
+#16 14.25   [90m33 |[0m       [36mif[0m (!match) [36mcontinue[0m;
+#16 14.25   [90m34 |[0m       [36mconst[0m version = match[[35m1[0m];
+#16 14.25 
+#16 14.25 Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+#16 14.25 This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+#16 14.25 This can slow down deployments or lead to failures when size limits are exceeded.
+#16 14.25 To resolve this, you can
+#16 14.25 - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+#16 14.25 - only use them in development, or
+#16 14.25 - opt out by adding an ignore comment to the highlighted call: fs.readdir(/*turbopackIgnore: true*/ ...), or
+#16 14.25 - remove them.
+#16 14.25 
+#16 14.25 Import traces:
+#16 14.25   App Route:
+#16 14.25     ./src/lib/release-zip.ts
+#16 14.25     ./src/app/api/paket/route.ts
+#16 14.25 
+#16 14.25   Server Component:
+#16 14.25     ./src/lib/release-zip.ts
+#16 14.25     ./src/app/indir/page.tsx
+#16 14.25 
+#16 14.25 
+#16 14.25 ./src/lib/release-zip.ts:36:24
+#16 14.25 Warning: Dynamic filesystem access causes tracing of the whole project
+#16 14.25   [90m34 |[0m       [36mconst[0m version = match[[35m1[0m];
+#16 14.25   [90m35 |[0m       [36mif[0m (!best || newerVersion(version, best.version)) {
+#16 14.25 [33m[1m>[0m [90m36 |[0m         best = { path: join(root, name), name, version };
+#16 14.25   [90m   |[0m                        [33m[1m^^^^^^^^^^^^^^^^[0m
+#16 14.25   [90m37 |[0m       }
+#16 14.25   [90m38 |[0m     }
+#16 14.25   [90m39 |[0m   }
+#16 14.25 
+#16 14.25 Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+#16 14.25 This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+#16 14.25 This can slow down deployments or lead to failures when size limits are exceeded.
+#16 14.25 To resolve this, you can
+#16 14.25 - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+#16 14.25 - only use them in development, or
+#16 14.25 - opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+#16 14.25 - remove them.
+#16 14.25 
+#16 14.25 Import traces:
+#16 14.25   App Route:
+#16 14.25     ./src/lib/release-zip.ts
+#16 14.25     ./src/app/api/paket/route.ts
+#16 14.25 
+#16 14.25   Server Component:
+#16 14.25     ./src/lib/release-zip.ts
+#16 14.25     ./src/app/indir/page.tsx
+#16 14.25 
+#16 14.25 
+#16 ERROR: process "/bin/sh -c npx prisma generate && npm run build" did not complete successfully: exit code: 1
+------
+ > [builder 3/3] RUN npx prisma generate && npm run build:
+14.25 Import traces:
+14.25   App Route:
+14.25     ./src/lib/release-zip.ts
+14.25     ./src/app/api/paket/route.ts
+14.25 
+14.25   Server Component:
+14.25     ./src/lib/release-zip.ts
+14.25     ./src/app/indir/page.tsx
+14.25 
+14.25 
+------
+Dockerfile:19
+
+--------------------
+
+  17 |     # Derleme s─▒ras─▒nda veritaban─▒na ba─şlan─▒lmaz; yaln─▒zca istemci ├╝retilir.
+
+  18 |     ENV DATABASE_URL="postgresql://bt:bt@127.0.0.1:5432/bt"
+
+  19 | >>> RUN npx prisma generate && npm run build
+
+  20 |     
+
+  21 |     FROM base AS runner
+
+--------------------
+
+failed to solve: process "/bin/sh -c npx prisma generate && npm run build" did not complete successfully: exit code: 1
+
+
+
+View build details: docker-desktop://dashboard/build/default/default/j855wy3ugvwxswv75cnyec9sq
+

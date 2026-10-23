@@ -1,0 +1,79 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Next.js auto-generated agent files
+AGENTS.md
+CLAUDE.md
+
+/src/generated/prisma
+
+# prisma
+/prisma/*.db
+/prisma/*.db-journal
+/prisma/*.bak
+**/__pycache__/
+
+# yüklenen envanter görselleri
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# kurulum paketi
+/release
+/.kurulum-ok
+/prisma/.seeded
+/yedek
+/public/BT-Hizmet-Yonetimi-kurulum.zip
+/public/BT-Hizmet-Yonetimi-*.zip
+/public/indir.html
+
+!.env.example
+
+# BT Hizmet Yonetimi: asla GitHub'a gitmemeli
+.env
+*.key
+*.pem
+lisans-uretici/
+yedekler/
+release/
+build-log.txt
+public/BT-Hizmet-Yonetimi-*.zip
+*.zip

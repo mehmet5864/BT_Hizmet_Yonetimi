@@ -1,0 +1,62 @@
+{
+  "name": "envanter-yonetim",
+  "version": "1.0.1",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "next build",
+    "docker:up": "docker compose up --build -d",
+    "docker:start": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "lint": "eslint",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "docs:guides": "tsx scripts/generate-guides.ts",
+    "package": "node scripts/package-release.mjs",
+    "dev": "next dev --port 43130 --hostname 0.0.0.0",
+    "start": "next start --port 43130 --hostname 0.0.0.0",
+    "setup": "prisma db push && npm run db:seed",
+    "license:gen": "node scripts/license-gen.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.10.0",
+    "class-variance-authority": "^0.7.1",
+    "cmdk": "^1.1.1",
+    "cn": "^0.4.0",
+    "date-fns": "^4.4.0",
+    "docx": "^9.7.2",
+    "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
+    "lucide-react": "^1.48.0",
+    "next": "16.3.6",
+    "next-themes": "^0.4.6",
+    "pdfkit": "^0.20.2",
+    "prisma": "^7.10.0",
+    "radix-ui": "^1.6.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "shadcn": "^4.21.0",
+    "sonner": "^2.0.8",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.6.5",
+    "@prisma/adapter-pg": "^7.10.0",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pdfkit": "^0.17.6",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.6",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "@types/pg": "^8.15.0"
+  }
+}

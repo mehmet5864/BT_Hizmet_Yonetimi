@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 500" role="img" aria-label="السعودية">
+  <rect width="750" height="500" fill="#165d31"/>
+  <text
+    x="375"
+    y="188"
+    text-anchor="middle"
+    fill="#fff"
+    font-size="54"
+    font-weight="700"
+    font-family="Noto Naskh Arabic, Noto Sans Arabic, Amiri, Tahoma, serif"
+  >لا إله إلا الله</text>
+  <text
+    x="375"
+    y="258"
+    text-anchor="middle"
+    fill="#fff"
+    font-size="48"
+    font-weight="700"
+    font-family="Noto Naskh Arabic, Noto Sans Arabic, Amiri, Tahoma, serif"
+  >محمد رسول الله</text>
+  <path
+    fill="#fff"
+    d="M96 348h470c8 0 14 6 14 14s-6 14-14 14H178l-22 48h-28l22-48H96c-8 0-14-6-14-14s6-14 14-14z"
+  />
+  <path fill="#fff" d="M566 336c22 0 40 14 40 32s-18 32-40 32c-10 0-18-3-24-8l8-12c4 3 10 5 16 5 12 0 22-8 22-17s-10-17-22-17c-6 0-12 2-16 5l-8-12c6-5 14-8 24-8z"/>
+</svg>

@@ -1,0 +1,1195 @@
+// BT Varlık + ITIL süreçleri
+//
+// Envanter (Asset) yapılandırma öğesidir (CI). Personel, talep, değişiklik,
+// yama, zafiyet, olay ve problem kayıtları bu CI kimliğine bağlanabilir.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Asset {
+  id String @id @default(cuid())
+
+  assetType  String
+  formFactor String?
+
+  stockNo String? @unique
+  /// Üretici seri numarası
+  serialNo String?
+
+  /// Uygulama türü: ortam (PROD|TEST|DEV|DR), erişim adresi, kullanıcı sayısı, kurtarma hedefi, teknoloji
+  appEnvironment String?
+  appUrl         String?
+  appUserCount   String?
+  appRto         String?
+  appTechnology  String?
+  name    String?
+  deviceId String?
+
+  brand String?
+  model String?
+
+  servedApplication String?
+
+  ipAddress  String?
+  macAddress String?
+
+  operatingSystem String?
+  version         String?
+
+  cpu  String?
+  ram  String?
+  disk String?
+
+  ownerId      String
+  owner        Person      @relation("AssetOwner", fields: [ownerId], references: [id])
+  /// HELD | FREE — FREE iken kayıt kimsenin zimmetinde sayılmaz, yeni kişiye verilebilir
+  custody      String      @default("HELD")
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  criticality String @default("MEDIUM")
+  status      String @default("ACTIVE")
+
+  locRoom     Int?
+  locCorridor Int?
+  locCabinet  Int?
+  locShelf    Int?
+
+  imageUrl String?
+
+  supportStatus      String?
+  contractorVendorId String?
+  contractorVendor   Vendor? @relation("ContractorAssets", fields: [contractorVendorId], references: [id])
+  supportVendorId    String?
+  supportVendor      Vendor? @relation("SupportAssets", fields: [supportVendorId], references: [id])
+
+  supportStartDate DateTime?
+  supportEndDate   DateTime?
+  transactionDate  DateTime?
+
+  description String?
+
+  outgoingRelations AssetRelation[] @relation("RelationSource")
+  incomingRelations AssetRelation[] @relation("RelationTarget")
+  activities        ActivityLog[]
+  inventoryApprovals InventoryApproval[]
+  serviceRequests   ServiceRequest[]
+  changeRecords     ChangeRecord[]
+  patchRecords      PatchRecord[]
+  vulnerabilities   Vulnerability[]
+  incidents         Incident[]
+  problems          Problem[]
+  slaTickets        SlaTicket[]
+  appConfigs        AppConfig[]
+  catalogServices   CatalogService[]
+  itilProcesses     ItilProcessRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assetType])
+  @@index([serialNo])
+  @@index([criticality])
+  @@index([ownerId])
+  @@index([departmentId])
+  @@index([supportEndDate])
+}
+
+model AssetRelation {
+  id String @id @default(cuid())
+
+  relationType String @default("HOSTED_ON")
+
+  sourceId String
+  source   Asset  @relation("RelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  targetId String
+  target   Asset  @relation("RelationTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([sourceId, targetId, relationType])
+  @@index([targetId])
+}
+
+model Person {
+  id       String  @id @default(cuid())
+  fullName String  @unique
+  tcNo     String? @unique
+  sicilNo  String? @unique
+  title    String?
+  duty     String?
+  workplace String?
+  email    String?
+  phone    String?
+  photoUrl String?
+
+  /// USER | SYSTEM_ADMIN | UNIT_MANAGER | SENIOR_MANAGER | INFOSEC_MANAGER | SUPER_ADMIN
+  role String @default("USER")
+  /// MANUAL | AD | BOTH
+  roleSource String @default("MANUAL")
+  /// SISTEM | NETWORK | SIBER | YAZILIM | VERITABANI | SERVIS — gelen talepler bu ofisle sınırlanır
+  requestOffice String?
+  passwordHash String?
+  /// Hatalı giriş sayacı ve geçici kilit (güvenlik politikası)
+  failedLogins Int       @default(0)
+  lockedUntil  DateTime?
+  adUsername String? @unique
+  adGroups   String?
+
+  departmentId String?
+  department   Department? @relation("DeptMembers", fields: [departmentId], references: [id])
+  parentDepartmentId String?
+  parentDepartment   Department? @relation("ParentDeptMembers", fields: [parentDepartmentId], references: [id])
+
+  unitManagerId String?
+  unitManager   Person?  @relation("UnitManager", fields: [unitManagerId], references: [id])
+  unitReports   Person[] @relation("UnitManager")
+
+  parentManagerId String?
+  parentManager   Person?  @relation("ParentManager", fields: [parentManagerId], references: [id])
+  parentReports   Person[] @relation("ParentManager")
+
+  managedDepartments       Department[] @relation("DeptManager")
+  managedParentDepartments Department[] @relation("ParentDeptManager")
+
+  assets Asset[] @relation("AssetOwner")
+
+  requestedRequests      ServiceRequest[] @relation("RequestOwner")
+  requestingMgrRequests  ServiceRequest[] @relation("RequestReqManager")
+  handlingMgrRequests    ServiceRequest[] @relation("RequestHandleManager")
+  assignedRequests       ServiceRequest[] @relation("RequestAssignee")
+  escalatedRequests      ServiceRequest[] @relation("RequestEscalatedBy")
+
+  requestedChanges     ChangeRecord[] @relation("ChangeRequester")
+  changeReqManagers    ChangeRecord[] @relation("ChangeReqManager")
+  changeTargetMgr1     ChangeRecord[] @relation("ChangeTargetMgr1")
+  changeTargetMgr2     ChangeRecord[] @relation("ChangeTargetMgr2")
+  changeTargetMgr3     ChangeRecord[] @relation("ChangeTargetMgr3")
+  changeApprovalUnits  ChangeApprovalUnit[] @relation("ChangeApprovalManager")
+  infosecChanges       ChangeRecord[] @relation("ChangeInfosec")
+
+  requestedPatches     PatchRecord[] @relation("PatchRequester")
+  patchReqManagers     PatchRecord[] @relation("PatchReqManager")
+  patchAssetOwners     PatchRecord[] @relation("PatchAssetOwner")
+
+  ownedConfigs AppConfig[] @relation("ConfigOwner")
+  configManagers AppConfig[] @relation("ConfigManager")
+
+  ownedVulns Vulnerability[] @relation("VulnOwner")
+  vulnManagers Vulnerability[] @relation("VulnManager")
+
+  slaOwners SlaTicket[] @relation("SlaOwner")
+  requestedSlas SlaTicket[] @relation("SlaRequester")
+  slaReqManagers SlaTicket[] @relation("SlaReqManager")
+
+  requestedIncidents Incident[] @relation("IncidentRequester")
+  incidentReqManagers Incident[] @relation("IncidentReqManager")
+  incidentL1Analysts Incident[] @relation("IncidentL1Analyst")
+  incidentL2Analysts Incident[] @relation("IncidentL2Analyst")
+  incidentEscalatedBy Incident[] @relation("IncidentEscalatedBy")
+
+  requestedProblems Problem[] @relation("ProblemRequester")
+  problemReqManagers Problem[] @relation("ProblemReqManager")
+  proposedProblems Problem[] @relation("ProblemProposed")
+  assignedProblems Problem[] @relation("ProblemAssignee")
+  infosecProblems Problem[] @relation("ProblemInfosec")
+  problemAssignmentDecisions Problem[] @relation("ProblemAssignmentDecider")
+
+  inventoryRequested InventoryApproval[] @relation("InventoryApprovalRequester")
+  inventoryReviewed  InventoryApproval[] @relation("InventoryApprovalReviewer")
+
+  scoreEvents ScoreEvent[]
+
+  agileProductsOwned AgileProduct[] @relation("AgileProductOwner")
+  agileItemsAssigned AgileItem[]    @relation("AgileItemAssignee")
+  agileItemsReported AgileItem[]    @relation("AgileItemReporter")
+  agileComments      AgileComment[]
+  agileMeetings      AgileMeeting[]
+
+  ownedApiKeys   ApiKey[] @relation("ApiKeyOwner")
+  createdApiKeys ApiKey[] @relation("ApiKeyCreator")
+
+  catalogRequested    CatalogService[] @relation("CatalogRequester")
+  catalogReqManagers  CatalogService[] @relation("CatalogReqManager")
+  catalogOwned        CatalogService[] @relation("CatalogOwner")
+  processRequested    ItilProcessRecord[] @relation("ProcessRequester")
+  processReqManagers  ItilProcessRecord[] @relation("ProcessReqManager")
+  processOwned        ItilProcessRecord[] @relation("ProcessOwner")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([role])
+  @@index([departmentId])
+}
+
+model Department {
+  id   String  @id @default(cuid())
+  name String  @unique
+  code String?
+  /// BIRIM_SEFLIGI | SUBE_MUDURLUGU | DAIRE_BASKANLIGI | GENEL_MUDURLUK | BAKAN_YARDIMCILIGI | OZEL_KALEM | BASKANLIK | BAKANLIK
+  unitType String?
+
+  parentId String?
+  parent   Department?  @relation("DeptTree", fields: [parentId], references: [id])
+  children Department[] @relation("DeptTree")
+
+  managerId String?
+  manager   Person? @relation("DeptManager", fields: [managerId], references: [id])
+
+  assets Asset[]
+  people Person[] @relation("DeptMembers")
+  parentMembers Person[] @relation("ParentDeptMembers")
+  parentManagedBy Person? @relation("ParentDeptManager", fields: [parentManagerId], references: [id])
+  parentManagerId String?
+
+  requestingRequests ServiceRequest[] @relation("RequestingDept")
+  handlingRequests   ServiceRequest[] @relation("HandlingDept")
+  escalatedRequests  ServiceRequest[] @relation("RequestEscalatedDept")
+  requestingChanges  ChangeRecord[] @relation("ChangeReqDept")
+  targetChanges1     ChangeRecord[] @relation("ChangeTargetDept1")
+  targetChanges2     ChangeRecord[] @relation("ChangeTargetDept2")
+  targetChanges3     ChangeRecord[] @relation("ChangeTargetDept3")
+  changeApprovalUnits ChangeApprovalUnit[] @relation("ChangeApprovalDept")
+  configs            AppConfig[]
+  vulns              Vulnerability[]
+  incidents          Incident[]
+  slaTickets         SlaTicket[]
+  catalogRequested   CatalogService[] @relation("CatalogReqDept")
+  catalogDepartments CatalogService[] @relation("CatalogDept")
+  processRequested   ItilProcessRecord[] @relation("ProcessReqDept")
+  processDepartments ItilProcessRecord[] @relation("ProcessDept")
+
+  createdAt DateTime @default(now())
+}
+
+model Vendor {
+  id            String  @id @default(cuid())
+  name          String  @unique
+  contactPerson String?
+  phone         String?
+  email         String?
+
+  contact1Phone String?
+  contact1Email String?
+  contact2Phone String?
+  contact2Email String?
+  contact3Phone String?
+  contact3Email String?
+  /// Resmi support / çağrı merkezi adresleri (virgülle birden fazla)
+  supportEmail String?
+  contractFileUrl String?
+  specFileUrl     String?
+  specFileName    String?
+  /// TEKNIK | IDARI
+  specKind        String?
+  description String?
+
+  contacts   VendorContact[]
+  products   VendorProduct[]
+  slaLevels  VendorSlaLevel[]
+  contractorAssets Asset[] @relation("ContractorAssets")
+  supportAssets    Asset[] @relation("SupportAssets")
+  slaTickets       SlaTicket[]
+
+  createdAt DateTime @default(now())
+}
+
+model VendorContact {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  name     String
+  email    String?
+  phone    String?
+  /// SORUMLU | DESTEK
+  kind     String @default("SORUMLU")
+  sortOrder Int   @default(0)
+
+  @@index([vendorId])
+}
+
+model VendorProduct {
+  id          String @id @default(cuid())
+  vendorId    String
+  vendor      Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  name        String
+  /// PERPETUAL | SUBSCRIPTION | SUPPORT | OEM | OPEN_SOURCE | OTHER
+  licenseType String?
+  quantity    Int    @default(1)
+  version     String?
+  serialNo    String?
+  notes       String?
+  slaTickets  SlaTicket[]
+  createdAt   DateTime @default(now())
+
+  @@index([vendorId])
+}
+
+model VendorSlaLevel {
+  id            String @id @default(cuid())
+  vendorId      String
+  vendor        Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  /// 1 | 2 | 3
+  level         Int
+  name          String
+  responseHours Int
+  resolveHours  Int
+  description   String?
+
+  @@unique([vendorId, level])
+  @@index([vendorId])
+}
+
+model ActivityLog {
+  id String @id @default(cuid())
+
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  entityType String?
+  entityId   String?
+
+  action String
+  actor  String @default("sistem")
+  changes String?
+  note    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([assetId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+/// Servis talebi — Sistem, Network, Siber, Yazılım, Veritabanı, Servis Masası
+model ServiceRequest {
+  id        String @id @default(cuid())
+  requestNo String @unique
+
+  /// AD_USER | PASSWORD | SERVER_NEW | REPO_ACCESS | DB_USER | SD_SUPPORT | ...
+  requestType String
+  /// SISTEM | NETWORK | SIBER | YAZILIM | VERITABANI | SERVIS
+  office      String
+
+  requesterId String
+  requester   Person @relation("RequestOwner", fields: [requesterId], references: [id])
+  requestDate DateTime @default(now())
+
+  requestingDeptId String?
+  requestingDept   Department? @relation("RequestingDept", fields: [requestingDeptId], references: [id])
+  requestingManagerId String?
+  requestingManager   Person? @relation("RequestReqManager", fields: [requestingManagerId], references: [id])
+
+  handlingDeptId String?
+  handlingDept   Department? @relation("HandlingDept", fields: [handlingDeptId], references: [id])
+  handlingManagerId String?
+  handlingManager   Person? @relation("RequestHandleManager", fields: [handlingManagerId], references: [id])
+  /// Onaydan sonra gerçekleştirecek birimde işi üstlenen kişi
+  assigneeId  String?
+  assignee    Person? @relation("RequestAssignee", fields: [assigneeId], references: [id])
+  assignedAt  DateTime?
+
+  /// OPEN | IN_PROGRESS | WAITING | DONE | REJECTED | CANCELLED
+  status      String  @default("OPEN")
+  /// LOW | MEDIUM | HIGH | CRITICAL
+  severity    String  @default("MEDIUM")
+  resolveDueAt DateTime?
+  resolvedAt   DateTime?
+  /// NONE | PENDING | TRANSFERRED | ACCEPTED | REJECTED
+  escalationStatus String @default("NONE")
+  /// MISROUTED | UPPER_UNIT
+  escalationKind   String?
+  originalOffice   String?
+  escalatedOffice  String?
+  escalatedDeptId  String?
+  escalatedDept    Department? @relation("RequestEscalatedDept", fields: [escalatedDeptId], references: [id])
+  escalationReason String?
+  escalatedAt      DateTime?
+  escalatedById    String?
+  escalatedBy      Person? @relation("RequestEscalatedBy", fields: [escalatedById], references: [id])
+  reason      String?
+  description String?
+
+  /// Türe özel alanlar JSON
+  details String?
+
+  assetId String?
+  asset   Asset? @relation(fields: [assetId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requestType])
+  @@index([office])
+  @@index([status])
+  @@index([requesterId])
+}
+
+model ChangeRecord {
+  id        String @id @default(cuid())
+  changeNo  String @unique
+
+  requesterId String
+  requester   Person @relation("ChangeRequester", fields: [requesterId], references: [id])
+  requestingDeptId String?
+  requestingDept   Department? @relation("ChangeReqDept", fields: [requestingDeptId], references: [id])
+  requestingManagerId String?
+  requestingManager   Person? @relation("ChangeReqManager", fields: [requestingManagerId], references: [id])
+
+  targetDept1Id String?
+  targetDept1   Department? @relation("ChangeTargetDept1", fields: [targetDept1Id], references: [id])
+  targetMgr1Id  String?
+  targetMgr1    Person? @relation("ChangeTargetMgr1", fields: [targetMgr1Id], references: [id])
+  targetDept2Id String?
+  targetDept2   Department? @relation("ChangeTargetDept2", fields: [targetDept2Id], references: [id])
+  targetMgr2Id  String?
+  targetMgr2    Person? @relation("ChangeTargetMgr2", fields: [targetMgr2Id], references: [id])
+  targetDept3Id String?
+  targetDept3   Department? @relation("ChangeTargetDept3", fields: [targetDept3Id], references: [id])
+  targetMgr3Id  String?
+  targetMgr3    Person? @relation("ChangeTargetMgr3", fields: [targetMgr3Id], references: [id])
+
+  /// Onay alınacak hedef birim sayısı (1–10)
+  approvalUnitCount Int @default(1)
+  approvalUnits     ChangeApprovalUnit[]
+
+  infosecManagerId String?
+  infosecManager   Person? @relation("ChangeInfosec", fields: [infosecManagerId], references: [id])
+
+  changeIp     String?
+  /// SOFTWARE | HARDWARE | OTHER
+  changeKind   String?
+  /// VIRTUAL | PHYSICAL
+  machineType  String?
+  /// PARTIAL | FULL
+  impact       String?
+
+  workStartDate  DateTime?
+  expectedEndDate DateTime?
+  requestDate    DateTime @default(now())
+  approvalDate   DateTime?
+  /// STANDARD | NORMAL | EMERGENCY
+  changeType   String @default("NORMAL")
+  /// LOW | MEDIUM | HIGH | CRITICAL
+  risk         String @default("MEDIUM")
+  rollbackPlan String?
+  testPlan     String?
+  cabNote      String?
+  reviewNote   String?
+  incidentId   String?
+  problemId    String?
+
+  /// DRAFT | PENDING | APPROVED | IN_PROGRESS | COMPLETED | REJECTED | CANCELLED
+  status      String @default("PENDING")
+  description String?
+
+  assetId String?
+  asset   Asset? @relation(fields: [assetId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model ChangeApprovalUnit {
+  id           String @id @default(cuid())
+  changeId     String
+  change       ChangeRecord @relation(fields: [changeId], references: [id], onDelete: Cascade)
+  sortOrder    Int
+  departmentId String
+  department   Department @relation("ChangeApprovalDept", fields: [departmentId], references: [id])
+  managerId    String
+  manager      Person @relation("ChangeApprovalManager", fields: [managerId], references: [id])
+
+  @@unique([changeId, sortOrder])
+  @@index([changeId])
+}
+
+model PatchRecord {
+  id      String @id @default(cuid())
+  patchNo String @unique
+
+  requesterId String
+  requester   Person @relation("PatchRequester", fields: [requesterId], references: [id])
+  requestingManagerId String?
+  requestingManager   Person? @relation("PatchReqManager", fields: [requestingManagerId], references: [id])
+
+  title   String
+  scope   String?
+  /// OS | APPLICATION | FIRMWARE | OTHER
+  systemType String?
+  /// SERVER | CLIENT | NETWORK | OTHER
+  systemKind String?
+  ipRange    String?
+  /// PARTIAL | FULL
+  impact     String?
+
+  assetOwnerId String?
+  assetOwner   Person? @relation("PatchAssetOwner", fields: [assetOwnerId], references: [id])
+
+  risks String?
+  /// SCCM | CUSTOM | MANUAL
+  distribution String?
+
+  requestDate     DateTime @default(now())
+  approvalDate    DateTime?
+  workStartDate   DateTime?
+  expectedEndDate DateTime?
+
+  status      String @default("PENDING")
+  description String?
+
+  assetId String?
+  asset   Asset? @relation(fields: [assetId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AppConfig {
+  id String @id @default(cuid())
+
+  appCode String?
+  appName String
+  version String?
+
+  ownerId String
+  owner   Person @relation("ConfigOwner", fields: [ownerId], references: [id])
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  managerId String?
+  manager   Person? @relation("ConfigManager", fields: [managerId], references: [id])
+
+  backupDate  DateTime?
+  description String?
+
+  assetId String?
+  asset   Asset? @relation(fields: [assetId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Vulnerability {
+  id     String @id @default(cuid())
+  vulnNo String @unique
+
+  deviceName String?
+  deviceIp   String?
+
+  ownerId String?
+  owner   Person? @relation("VulnOwner", fields: [ownerId], references: [id])
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  managerId String?
+  manager   Person? @relation("VulnManager", fields: [managerId], references: [id])
+
+  detectedAt DateTime @default(now())
+  dueDate    DateTime?
+  /// LOW | MEDIUM | HIGH | CRITICAL
+  severity   String @default("MEDIUM")
+  /// OPEN | CLOSED | ACCEPTED
+  status     String @default("OPEN")
+  closeDays  Int?
+  notFixedReason String?
+  description String?
+
+  /// Tarayıcı bulgu kimliği — yeniden çekimde aynı kayıt güncellenir
+  externalId String? @unique
+  cve        String?
+  pluginId   String?
+  /// MANUAL | SCANNER
+  source     String  @default("MANUAL")
+  scannerVendor String?
+
+  assetId String?
+  asset   Asset? @relation(fields: [assetId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([severity])
+  @@index([assetId])
+  @@index([deviceIp])
+}
+
+model SlaTicket {
+  id     String @id @default(cuid())
+  ticketNo String @unique
+
+  title       String
+  application String?
+  ownerId     String?
+  owner       Person? @relation("SlaOwner", fields: [ownerId], references: [id])
+  requesterId String?
+  requester   Person? @relation("SlaRequester", fields: [requesterId], references: [id])
+  requestingManagerId String?
+  requestingManager   Person? @relation("SlaReqManager", fields: [requestingManagerId], references: [id])
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  vendorId     String?
+  vendor       Vendor? @relation(fields: [vendorId], references: [id])
+  productId    String?
+  product      VendorProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  /// Şartnamedeki 1 | 2 | 3
+  slaLevel     Int?
+
+  /// LOW | MEDIUM | HIGH | CRITICAL
+  severity String @default("MEDIUM")
+  status   String @default("OPEN")
+  description String?
+
+  assetId String?
+  asset   Asset? @relation(fields: [assetId], references: [id])
+
+  openedAt DateTime @default(now())
+  closedAt DateTime?
+  slaStartedAt     DateTime?
+  slaResponseDueAt DateTime?
+  slaDueAt         DateTime?
+  notifiedAt       DateTime?
+  notifyNote       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Incident {
+  id         String @id @default(cuid())
+  incidentNo String @unique
+
+  title     String
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  requesterId String?
+  requester   Person? @relation("IncidentRequester", fields: [requesterId], references: [id])
+  requestingManagerId String?
+  requestingManager   Person? @relation("IncidentReqManager", fields: [requestingManagerId], references: [id])
+  l1AnalystId String?
+  l1Analyst   Person? @relation("IncidentL1Analyst", fields: [l1AnalystId], references: [id])
+  l2AnalystId String?
+  l2Analyst   Person? @relation("IncidentL2Analyst", fields: [l2AnalystId], references: [id])
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  ioc       String?
+  /// Yüklenen sandbox analiz raporu (/api/uploads adresi)
+  sandboxReportUrl  String?
+  sandboxReportName String?
+  description String?
+  /// LOW | MEDIUM | HIGH | CRITICAL
+  severity String @default("MEDIUM")
+  /// LOW | MEDIUM | HIGH (etki) / aciliyet; öncelik P1-P4 matristen türer
+  impact    String?
+  urgency   String?
+  priority  String @default("P3")
+  isMajor   Boolean @default(false)
+  respondDueAt DateTime?
+  resolveDueAt DateTime?
+  respondedAt  DateTime?
+  resolvedAt   DateTime?
+  /// İlişkili değişiklik / hizmet (FK'siz; silme sırasında temizlenir)
+  changeId  String?
+  serviceId String?
+  /// L1 | L2
+  layer    String @default("L1")
+  /// NONE | PENDING | TRANSFERRED
+  escalationStatus String @default("NONE")
+  escalatedOffice  String?
+  escalationReason String?
+  escalatedAt      DateTime?
+  escalatedById    String?
+  escalatedBy      Person? @relation("IncidentEscalatedBy", fields: [escalatedById], references: [id])
+  /// OPEN | INVESTIGATING | CONTAINED | RESOLVED | CLOSED
+  status    String @default("OPEN")
+
+  assetId String?
+  asset   Asset? @relation(fields: [assetId], references: [id])
+
+  problems Problem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([severity])
+  @@index([layer])
+}
+
+model Problem {
+  id        String @id @default(cuid())
+  problemNo String @unique
+
+  title       String
+  description String?
+  rootCause   String?
+  workaround  String?
+  requesterId String?
+  requester   Person? @relation("ProblemRequester", fields: [requesterId], references: [id])
+  requestingManagerId String?
+  requestingManager   Person? @relation("ProblemReqManager", fields: [requestingManagerId], references: [id])
+  proposedAssigneeId String?
+  proposedAssignee   Person? @relation("ProblemProposed", fields: [proposedAssigneeId], references: [id])
+  assigneeId String?
+  assignee   Person? @relation("ProblemAssignee", fields: [assigneeId], references: [id])
+  infosecManagerId String?
+  infosecManager   Person? @relation("ProblemInfosec", fields: [infosecManagerId], references: [id])
+  assignmentDecidedById String?
+  assignmentDecidedBy   Person? @relation("ProblemAssignmentDecider", fields: [assignmentDecidedById], references: [id])
+  /// NONE | PENDING | APPROVED | REJECTED
+  assignmentStatus String @default("NONE")
+  assignedAt DateTime?
+  assignmentNote String?
+  /// OPEN | INVESTIGATING | KNOWN_ERROR | RESOLVED | CLOSED
+  status      String @default("OPEN")
+  /// LOW | MEDIUM | HIGH | CRITICAL
+  severity    String @default("MEDIUM")
+  permanentFix String?
+  changeId    String?
+  serviceId   String?
+
+  incidentId String?
+  incident   Incident? @relation(fields: [incidentId], references: [id])
+  assetId    String?
+  asset      Asset? @relation(fields: [assetId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Hizmet kataloğu — kullanıcılara açık BT hizmetleri ve erişim şartları
+model CatalogService {
+  id        String @id @default(cuid())
+  serviceNo String @unique
+  name      String
+  summary   String?
+  /// ACTIVE | PLANNED | RETIRED
+  status    String @default("ACTIVE")
+  /// USER | INTERNAL | BOTH
+  audience  String @default("USER")
+
+  requesterId String
+  requester   Person @relation("CatalogRequester", fields: [requesterId], references: [id])
+  requestingDeptId String?
+  requestingDept   Department? @relation("CatalogReqDept", fields: [requestingDeptId], references: [id])
+  requestingManagerId String?
+  requestingManager   Person? @relation("CatalogReqManager", fields: [requestingManagerId], references: [id])
+
+  ownerId String?
+  owner   Person? @relation("CatalogOwner", fields: [ownerId], references: [id])
+  departmentId String?
+  department   Department? @relation("CatalogDept", fields: [departmentId], references: [id])
+
+  hours             String?
+  accessConditions  String?
+  requestOffice     String?
+  requestType       String?
+  availabilityTarget String?
+  responseHours     Int?
+  resolveHours      Int?
+  criticality       String @default("MEDIUM")
+  description       String?
+
+  assetId String?
+  asset   Asset? @relation(fields: [assetId], references: [id])
+  processes ItilProcessRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([audience])
+  agileProducts AgileProduct[]
+}
+
+/// ITIL 2.0 süreç kayıtları (tasarım, SLA, kullanılabilirlik, kapasite, süreklilik, doğrulama, sürüm, izleme, değerlendirme)
+model ItilProcessRecord {
+  id       String @id @default(cuid())
+  recordNo String @unique
+  /// DESIGN | SLA | AVAILABILITY | CAPACITY | CONTINUITY | VALIDATION | RELEASE | MONITORING | EVALUATION
+  process  String
+  title    String
+  status   String @default("OPEN")
+
+  requesterId String
+  requester   Person @relation("ProcessRequester", fields: [requesterId], references: [id])
+  requestingDeptId String?
+  requestingDept   Department? @relation("ProcessReqDept", fields: [requestingDeptId], references: [id])
+  requestingManagerId String?
+  requestingManager   Person? @relation("ProcessReqManager", fields: [requestingManagerId], references: [id])
+
+  ownerId String?
+  owner   Person? @relation("ProcessOwner", fields: [ownerId], references: [id])
+  departmentId String?
+  department   Department? @relation("ProcessDept", fields: [departmentId], references: [id])
+
+  serviceId String?
+  service   CatalogService? @relation(fields: [serviceId], references: [id])
+  assetId   String?
+  asset     Asset? @relation(fields: [assetId], references: [id])
+
+  startDate DateTime?
+  endDate   DateTime?
+  severity  String?
+  details   String?
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([process])
+  @@index([status])
+  @@index([serviceId])
+}
+
+/// Envanter ekleme / silme onayı — modül yöneticisi veya süper yönetici sonuçlandırır
+model InventoryApproval {
+  id String @id @default(cuid())
+
+  /// CREATE | DELETE
+  action String
+  /// PENDING | APPROVED | REJECTED
+  status String @default("PENDING")
+
+  assetType String?
+  assetId   String?
+  asset     Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  /// CREATE için önerilen alanlar JSON
+  payload String?
+  reason  String?
+
+  requestedById String
+  requestedBy   Person @relation("InventoryApprovalRequester", fields: [requestedById], references: [id])
+  reviewedById  String?
+  reviewedBy    Person? @relation("InventoryApprovalReviewer", fields: [reviewedById], references: [id])
+  reviewedAt    DateTime?
+  reviewNote    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([requestedById])
+  @@index([assetId])
+}
+
+/// Dış sistemler için REST API anahtarı. Gizli değer yalnızca oluşturulurken gösterilir.
+model ApiKey {
+  id         String  @id @default(cuid())
+  name       String
+  prefix     String  @unique
+  secretHash String
+  /// JSON string[] — envanter:read, talepler:write, ...
+  scopes     String  @default("[]")
+
+  ownerId String?
+  owner   Person? @relation("ApiKeyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdById String?
+  createdBy   Person? @relation("ApiKeyCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  /// JSON string[] — 10.0.0.0/8, 203.0.113.10
+  allowedCidrs String @default("[]")
+
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+/// Entegrasyon ayarları (AD, SIEM/CEF, onay, e-posta) — tek satır JSON
+model SystemConfig {
+  id        String   @id @default("default")
+  payload   String   @default("{}")
+  updatedAt DateTime @updatedAt
+}
+
+/// Puanlama kuralı — modül + işlem + önem derecesi başına puan (süper yönetici ayarı)
+model ScoreRule {
+  id       String @id @default(cuid())
+  module   String
+  /// CREATE | UPDATE | COMPLETE
+  action   String
+  /// LOW | MEDIUM | HIGH | CRITICAL
+  severity String
+  points   Int
+
+  @@unique([module, action, severity])
+}
+
+/// Personelin yaptığı işin puan defteri (puan, işlem anındaki kuraldan yazılır)
+model ScoreEvent {
+  id       String @id @default(cuid())
+  personId String
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  module   String
+  action   String
+  severity String
+  points   Int
+  entityId String?
+  entityNo String?
+  createdAt DateTime @default(now())
+
+  @@index([personId])
+  @@index([module, action])
+  @@index([createdAt])
+}
+
+/// Çevik çalışma — ürün / ekip
+model AgileProduct {
+  id          String  @id @default(cuid())
+  /// Kısa anahtar (ör. BT, PORTAL); iş numaralarında kullanılır
+  key         String  @unique
+  name        String
+  description String?
+  /// SCRUM | KANBAN
+  method      String  @default("SCRUM")
+  /// ACTIVE | ARCHIVED
+  status      String  @default("ACTIVE")
+
+  ownerId String?
+  owner   Person? @relation("AgileProductOwner", fields: [ownerId], references: [id])
+  serviceId String?
+  service   CatalogService? @relation(fields: [serviceId], references: [id])
+
+  sprints AgileSprint[]
+  items   AgileItem[]
+  meetings AgileMeeting[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  /// Kanban: Devam eden iş sınırı (boş = sınırsız)
+  wipLimit Int?
+}
+
+model AgileSprint {
+  id        String @id @default(cuid())
+  productId String
+  product   AgileProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  goal      String?
+  startDate DateTime?
+  endDate   DateTime?
+  /// PLANNED | ACTIVE | CLOSED
+  status    String @default("PLANNED")
+  /// Planlanan kapasite (hikâye puanı)
+  capacity  Int?
+  closedAt  DateTime?
+  retro     String?
+
+  items AgileItem[]
+  meetings AgileMeeting[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  /// Kapanışta kaydedilen özet
+  plannedPoints Int?
+  donePoints    Int?
+  carriedCount  Int?
+}
+
+model AgileItem {
+  id     String @id @default(cuid())
+  itemNo String @unique
+  productId String
+  product   AgileProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sprintId  String?
+  sprint    AgileSprint? @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+
+  /// EPIC | STORY | TASK | BUG
+  type     String @default("STORY")
+  title    String
+  acceptance   String?
+  labels       String?
+  blockedReason String?
+  parentId     String?
+  parent       AgileItem? @relation("AgileSub", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks     AgileItem[] @relation("AgileSub")
+  attachments  AgileAttachment[]
+  description String?
+  /// BACKLOG | TODO | IN_PROGRESS | REVIEW | DONE
+  status   String @default("BACKLOG")
+  /// LOW | MEDIUM | HIGH | CRITICAL
+  priority String @default("MEDIUM")
+  points   Int?
+  /// Backlog sırası (küçük = üstte)
+  rank     Int    @default(0)
+
+  assigneeId String?
+  assignee   Person? @relation("AgileItemAssignee", fields: [assigneeId], references: [id])
+  reporterId String?
+  reporter   Person? @relation("AgileItemReporter", fields: [reporterId], references: [id])
+
+  /// ITIL kaynak kaydı: INCIDENT | PROBLEM | CHANGE | REQUEST | VULNERABILITY | PATCH
+  sourceType String?
+  sourceId   String?
+  sourceNo   String?
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  /// Bağlı olduğu epik (EPIC türündeki başka bir iş)
+  epicId   String?
+  epic     AgileItem?  @relation("AgileEpic", fields: [epicId], references: [id], onDelete: SetNull)
+  children AgileItem[] @relation("AgileEpic")
+  comments AgileComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId, status])
+  @@index([sprintId])
+  @@index([assigneeId])
+}
+
+model AgileComment {
+  id       String @id @default(cuid())
+  itemId   String
+  item     AgileItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  authorId String?
+  author   Person? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  body     String
+  createdAt DateTime @default(now())
+
+  @@index([itemId])
+}
+
+/// Sprint planlama, günlük toplantı, sprint değerlendirme, retrospektif notları
+model AgileMeeting {
+  id        String @id @default(cuid())
+  productId String
+  product   AgileProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sprintId  String?
+  sprint    AgileSprint? @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  /// PLANNING | DAILY | REVIEW | RETRO | REFINEMENT
+  kind      String @default("DAILY")
+  title     String
+  meetingDate DateTime
+  attendees String?
+  notes     String?
+  decisions String?
+  createdById String?
+  createdBy   Person? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId, meetingDate])
+}
+
+/// Süreç akışı şablonu (adımlar JSON: [{kind,title}])
+model ProcessTemplate {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  steps       String
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/// Şablondan başlatılmış süreç akışı
+model ProcessFlow {
+  id        String @id @default(cuid())
+  flowNo    String @unique
+  name      String
+  note      String?
+  createdById String?
+  createdAt DateTime @default(now())
+  steps     ProcessFlowStep[]
+}
+
+model ProcessFlowStep {
+  id       String @id @default(cuid())
+  flowId   String
+  flow     ProcessFlow @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  position Int
+  /// INCIDENT | PROBLEM | CHANGE | PATCH | VULNERABILITY | AGILE
+  kind     String
+  title    String
+  recordId String?
+  recordNo String?
+
+  @@unique([flowId, position])
+}
+
+model AgileAttachment {
+  id        String @id @default(cuid())
+  itemId    String
+  item      AgileItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  url       String
+  name      String
+  uploadedById String?
+  createdAt DateTime @default(now())
+
+  @@index([itemId])
+}
+
+/// Bilgi bankası makalesi
+model KnowledgeArticle {
+  id        String @id @default(cuid())
+  articleNo String @unique
+  title     String
+  category  String?
+  tags      String?
+  body      String
+  /// DRAFT | PUBLISHED
+  status    String @default("DRAFT")
+  sourceType String?
+  sourceId   String?
+  sourceNo   String?
+  authorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+/// İş akışı / onay zinciri tanımı (görsel tasarımcıda çizilir; graf JSON olarak saklanır)
+model WorkflowDefinition {
+  id         String   @id @default(cuid())
+  name       String
+  /// request | change | patch
+  entityType String
+  enabled    Boolean  @default(false)
+  /// { nodes: [...], edges: [...] }
+  graph      String   @default("{}")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  instances WorkflowInstance[]
+
+  @@index([entityType, enabled])
+}
+
+/// Bir kayıt için çalışan onay zinciri örneği
+model WorkflowInstance {
+  id           String   @id @default(cuid())
+  definitionId String
+  definition   WorkflowDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  entityType   String
+  entityId     String
+  /// RUNNING | APPROVED | REJECTED
+  status       String   @default("RUNNING")
+  currentNodeId String?
+  /// Karar geçmişi (JSON dizi)
+  history      String   @default("[]")
+  /// Başlangıçta alınan graf kopyası (tanım sonradan değişse de bu örnek bozulmaz)
+  graph        String   @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([entityType, entityId])
+  @@index([status])
+}
