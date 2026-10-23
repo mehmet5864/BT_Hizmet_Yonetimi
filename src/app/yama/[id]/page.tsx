@@ -1,3 +1,4 @@
+import { WorkflowProgress } from "@/components/workflow/progress";
 import { notFound } from "next/navigation";
 
 import { StatusBadge } from "@/components/itil/status-badge";
@@ -39,6 +40,7 @@ export default async function PatchDetailPage({ params }: { params: Promise<{ id
         <DetailRow label="Durum"><StatusBadge value={row.status} label={CHANGE_STATUS_LABELS[row.status as keyof typeof CHANGE_STATUS_LABELS] ?? row.status} /></DetailRow>
         <DetailRow label="Açıklama">{row.description ?? "—"}</DetailRow>
       </dl></CardContent></Card>
+      <WorkflowProgress entity="patch" entityId={row.id} />
       <LinkedRecords sourceType="PATCH" id={row.id} no={row.patchNo} />
     </div>
   );

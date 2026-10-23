@@ -1,3 +1,4 @@
+import { WorkflowProgress } from "@/components/workflow/progress";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -120,6 +121,7 @@ export default async function ChangeDetailPage({ params }: { params: Promise<{ i
           )}
         </CardContent>
       </Card>
+      <WorkflowProgress entity="change" entityId={row.id} />
       <LinkedRecords sourceType="CHANGE" id={row.id} no={row.changeNo} />
     </div>
   );
