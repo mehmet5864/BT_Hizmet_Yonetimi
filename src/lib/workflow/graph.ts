@@ -114,7 +114,7 @@ export function defaultGraph(entity: WorkflowEntity): WfGraph {
     type: "approval",
     x: 280,
     y: 140,
-    label: entity === "change" ? "Birim amiri onayı" : "Amir onayı",
+    label: "Amir onayı",
     approver: { kind: "requestingManager" },
   });
   g.edges.push(
