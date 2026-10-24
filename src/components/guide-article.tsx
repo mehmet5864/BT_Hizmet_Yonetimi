@@ -63,6 +63,15 @@ function BlockView({ block }: { block: GuideBlock }) {
       </Table>
     );
   }
+  if (block.t === "img") {
+    return (
+      <figure className="space-y-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={block.src} alt={block.alt} loading="lazy" className="w-full rounded-lg border bg-white" />
+        {block.caption ? <figcaption className="text-muted-foreground text-xs">{block.caption}</figcaption> : null}
+      </figure>
+    );
+  }
   return (
     <Alert>
       <AlertTitle>{block.title ?? "Not"}</AlertTitle>

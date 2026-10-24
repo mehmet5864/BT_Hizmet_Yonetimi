@@ -9,6 +9,12 @@
 - Dil: yeni rapor adları, açıklamaları ve sütunları İngilizce karşılıklarıyla eklendi.
 - Not: Docker derlemesi kullanıcıda doğrulanır; Prisma alan adları şemayla elle karşılaştırıldı.
 
+- **Resimli Kullanıcı rehberi** (Kılavuzlar → Kullanıcı rehberi): her menü için ne işe yarar, ekran şeması (numaralı alanlar), çalışma adımları ve ITIL / Agile / DevSecOps'a göre nasıl olması gerektiği; uçtan uca olay örneği ve süreç akış şemaları.
+- **Resimli Yönetici rehberi** (Kılavuzlar → Yönetici rehberi): e-posta (SMTP), Active Directory (servis hesabı, LDAPS, grup → rol), SIEM (CEF/Syslog, UDP/TCP/TLS), zafiyet tarayıcıları (Nessus, Tenable, Qualys, OpenVAS, Rapid7, genel REST; sınırlamalar ve API ile bulgu gönderme), onay ve iş akışları, API anahtarları, TLS, yedek; sorun giderme tabloları.
+- Resimler **şematik SVG çizimlerdir** (`public/guides/`, `scripts/generate-guide-images.mjs` ile üretilir); gerçek ekran görüntüsü değildir. Kılavuz bloklarına `img` türü eklendi.
+- Qualys isteğine zorunlu `X-Requested-With` başlığı eklendi.
+- Not: Docker derlemesi kullanıcıda doğrulanır; yeni dosyalar yalnızca tür taramasından geçirildi.
+
 ## 1.0.0 — ilk kararlı yayın
 
 Bu sürüm 4.x geliştirme hattının son hâlidir; sürüm numarası ilk resmi yayın olarak 1.0.0'a sıfırlandı. Docker proje/volume adları (`bt-hizmet-yonetimi-v4`, `pgdata`, `envanter-data`, `envanter-uploads`) **değişmedi**, mevcut veriler korunur: `guncelle-docker.bat` yeterlidir.

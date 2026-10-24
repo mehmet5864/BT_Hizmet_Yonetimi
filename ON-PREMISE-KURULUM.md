@@ -1,4 +1,4 @@
-# BT Hizmet Yönetimi 1.0.1 — On-premise (sunucu) kurulumu
+# BT Hizmet Yönetimi 1.0.0 — On-premise (sunucu) kurulumu
 
 Kurum içi Linux sunucuda Docker ile çalıştırmak için. Windows'ta Docker Desktop kurulumu için bkz. KURULUM.md.
 Mimari: `envanter-yonetim-v4` (uygulama) + `bt-postgres-v4` (PostgreSQL 16). Veriler `pgdata`, yüklemeler `envanter-uploads` volume'larındadır.
@@ -11,7 +11,7 @@ Mimari: `envanter-yonetim-v4` (uygulama) + `bt-postgres-v4` (PostgreSQL 16). Ver
 
 ## 1. Kurulum
 ```bash
-unzip BT-Hizmet-Yonetimi-1.0.1.zip && cd BT-Hizmet-Yonetimi-kurulum
+unzip BT-Hizmet-Yonetimi-1.0.0.zip && cd BT-Hizmet-Yonetimi-kurulum
 {
   echo "SESSION_SECRET=$(openssl rand -hex 32)"
   echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"

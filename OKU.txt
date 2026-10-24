@@ -1,4 +1,4 @@
-BT Hizmet Yonetimi  1.0.1
+BT Hizmet Yonetimi  1.0.0
 
 Docker Desktop (PostgreSQL ile, Node.js gerekmez):
   Zip'i Docker penceresine SURUKLEMEYIN.

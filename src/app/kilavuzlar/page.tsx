@@ -60,6 +60,38 @@ export default async function GuidesPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <UserRound className="size-4" />
+              Kullanıcı rehberi (resimli)
+            </CardTitle>
+            <CardDescription>
+              Her menüde ne yapılır, nasıl çalışır ve ITIL, Agile ve DevSecOps’a göre nasıl olmalı. Şemalı ekran anlatımı.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/kilavuzlar/kullanici-rehberi">{t("guidesPage.readOnline")}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Shield className="size-4" />
+              Yönetici rehberi (resimli)
+            </CardTitle>
+            <CardDescription>
+              AD, SIEM, Nessus / Tenable / Qualys gibi zafiyet tarayıcıları, e-posta, onay, yetki, API ve yedek kurulumu adım adım.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/kilavuzlar/yonetici-rehberi">{t("guidesPage.readOnline")}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <UserRound className="size-4" />
               {t("guidesPage.userTitle")}
             </CardTitle>
             <CardDescription>{t("guidesPage.userDesc")}</CardDescription>

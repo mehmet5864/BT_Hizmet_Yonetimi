@@ -5,7 +5,8 @@ export type GuideBlock =
   | { t: "ul"; items: string[] }
   | { t: "ol"; items: string[] }
   | { t: "table"; headers: string[]; rows: string[][] }
-  | { t: "note"; title?: string; text: string };
+  | { t: "note"; title?: string; text: string }
+  | { t: "img"; src: string; alt: string; caption?: string };
 
 export type Guide = {
   file: string;

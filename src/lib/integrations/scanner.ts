@@ -135,6 +135,7 @@ function authHeaders(settings: ScannerSettings): Record<string, string> {
   } else if (settings.accessKey && !settings.secretKey) {
     headers.Authorization = `Bearer ${settings.accessKey}`;
   }
+  if (settings.vendor === "QUALYS") headers["X-Requested-With"] = "BT Hizmet Yonetimi";
   return headers;
 }
 

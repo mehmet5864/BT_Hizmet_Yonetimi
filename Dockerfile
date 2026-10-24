@@ -1,4 +1,4 @@
-# BT Hizmet Yönetimi 1.0.1 — üretim imajı (Next.js + Prisma 7 + PostgreSQL)
+# BT Hizmet Yönetimi 1.0.0 — üretim imajı (Next.js + Prisma 7 + PostgreSQL)
 
 FROM node:22-bookworm-slim AS base
 WORKDIR /app

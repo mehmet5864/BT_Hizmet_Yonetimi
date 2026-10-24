@@ -1,4 +1,4 @@
-# BT Hizmet Yönetimi 1.0.1 — kurulum
+# BT Hizmet Yönetimi 1.0.0 — kurulum
 
 Docker Desktop ile kurulur (Node.js gerekmez). Veritabanı **PostgreSQL 16**'dır; ayrı bir konteyner olarak otomatik kalkar.
 Sunucu (on-premise) kurulumu için **[ON-PREMISE-KURULUM.md](ON-PREMISE-KURULUM.md)**. Değişiklik listesi: **[SURUM.md](SURUM.md)**.
@@ -59,7 +59,7 @@ Ayarlar → Lisans'tan imzalı anahtar yüklenir (çevrimdışı doğrulanır). 
 
 Ayarlar → İş akışları: talep/değişiklik/yama için onay zinciri çizin, "Etkin" işaretleyin. Bekleyen adımlar: `/is-akisi`.
 
-## Canlı ortam: Active Directory, SIEM, e-posta (1.0.1)
+## Canlı ortam: Active Directory, SIEM, e-posta (1.0.0)
 
 Ayarlar → Bağlantılar bölümünden girilir; her sekmede **Bağlantıyı dene** düğmesi vardır.
 

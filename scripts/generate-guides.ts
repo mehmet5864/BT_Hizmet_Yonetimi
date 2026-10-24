@@ -166,6 +166,7 @@ function renderGuide(guide: Guide): Promise<Buffer> {
         drawTable(doc, block.headers, block.rows);
         return;
       }
+      if (block.t === "img") return;
       if (block.t === "note") {
         const title = block.title ?? "Not";
         doc.font("regular").fontSize(10);
