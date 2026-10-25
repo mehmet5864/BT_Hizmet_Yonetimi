@@ -49,6 +49,29 @@ export type RequestTypeKey =
   | "WIRELESS"
   | "FW_INTRANET"
   | "FW_INTERNET"
+  | "FW_DNAT"
+  | "FW_SNAT"
+  | "FW_IPSEC_VPN"
+  | "FW_SSL_VPN"
+  | "FW_RULE_REMOVE"
+  | "NET_ROUTE"
+  | "DHCP_SCOPE"
+  | "MAIL_SECURITY"
+  | "PENTEST"
+  | "SFTP_ACCOUNT"
+  | "WEB_GATEWAY"
+  | "SANDBOX"
+  | "IOC_BLOCK"
+  | "SWITCH_PORT"
+  | "WAN_LINK"
+  | "STORAGE_EXPAND"
+  | "SCHEDULED_JOB"
+  | "DOMAIN_PUBLISH"
+  | "LOG_ACCESS"
+  | "DB_REPLICATION"
+  | "DB_MASKING"
+  | "SD_PRINTER"
+  | "SD_ONBOARD"
   | "SIEM_LOG"
   | "SIEM_CORRELATION"
   | "FORENSIC"
@@ -89,6 +112,8 @@ export type RequestTypeDef = {
   description: string;
   slug: string;
   extraFields: RequestField[];
+  /** Birleştirilen eski tür: menüde görünmez, eski kayıtlar açılmaya devam eder. */
+  legacy?: boolean;
 };
 
 export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
@@ -97,7 +122,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "Kullanıcı oluşturma / silme / güncelleme",
     group: "AD grup ve yetki",
-    description: "Microsoft Active Directory / Entra ID hesap işlemi.",
+    description: "Dizin (Active Directory / bulut dizin) hesap işlemi.",
     slug: "kullanici",
     extraFields: [
       { id: "username", label: "Kullanıcı adı (sAMAccountName)", kind: "text", required: true, row: "islem" },
@@ -113,7 +138,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
       { id: "ouPath", label: "OU / birim yolu", kind: "text", row: "dizin", placeholder: "OU=IK,OU=Kurum,DC=kurum,DC=local" },
       { id: "directory", label: "Dizin", kind: "select", row: "dizin", options: [
         { value: "AD", label: "Active Directory" },
-        { value: "ENTRA", label: "Microsoft Entra ID" },
+        { value: "ENTRA", label: "Bulut dizin" },
         { value: "BOTH", label: "AD + Entra (hybrid)" },
       ] },
     ],
@@ -123,7 +148,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "Grup talep / yetkilendirme",
     group: "AD grup ve yetki",
-    description: "AD güvenlik / dağıtım grubu veya Entra ID rol grubu.",
+    description: "Güvenlik / dağıtım grubu veya bulut rol grubu.",
     slug: "grup-yetki",
     extraFields: [
       { id: "username", label: "Kullanıcı adı", kind: "text", row: "grup" },
@@ -150,7 +175,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "GPO talep",
     group: "AD grup ve yetki",
-    description: "Microsoft Group Policy — OU bağlantısı, WMI filtresi ve güvenlik süzgeci.",
+    description: "Grup ilkesi (GPO) — OU bağlantısı, WMI filtresi ve güvenlik süzgeci.",
     slug: "gpo",
     extraFields: [
       { id: "gpoName", label: "GPO adı", kind: "text", required: true, row: "gpo" },
@@ -177,7 +202,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
       { id: "hostIp", label: "IP adresi", kind: "text", row: "hedef" },
       { id: "adminScope", label: "Yetki türü", kind: "select", row: "yetki", options: [
         { value: "LOCAL_ADMIN", label: "Yerel Administrators" },
-        { value: "LAPS", label: "LAPS / Windows LAPS" },
+        { value: "LAPS", label: "Yerel yönetici parola yönetimi (LAPS)" },
         { value: "SUDO", label: "Linux sudo" },
         { value: "PAW", label: "PAW / ayrıcalıklı iş istasyonu" },
       ] },
@@ -229,47 +254,59 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "IP sabitleme talep",
     group: "IP sabitleme",
-    description: "DHCP rezervasyonu (Microsoft DHCP / Infoblox / Cisco).",
+    description: "Sabit IP için DHCP rezervasyonu.",
     slug: "ip-sabitleme",
     extraFields: [
       { id: "hostName", label: "Sunucu / istemci adı", kind: "text", required: true, row: "hedef" },
       { id: "hostIp", label: "Sunucu / istemci IP", kind: "text", required: true, row: "hedef" },
       { id: "macAddress", label: "MAC adresi", kind: "text", row: "ag" },
-      { id: "dhcpScope", label: "DHCP kapsamı / Infoblox ağı", kind: "text", row: "ag" },
+      { id: "dhcpScope", label: "DHCP kapsamı / ağı", kind: "text", row: "ag" },
     ],
   },
   SERVER_NEW: {
     key: "SERVER_NEW",
     office: "SISTEM",
-    label: "Sunucu talebi",
+    label: "Sunucu (yeni / güncelleme / kaldırma)",
     group: "Sunucu işlemleri",
-    description: "VMware vSphere, Microsoft Hyper-V, Nutanix AHV veya KVM üzerinde yeni sunucu.",
+    description: "Yeni sunucu, kaynak artırımı veya kaldırma. İşlem türünü talep içinde seçin; yalnızca ilgili alanları doldurun.",
     slug: "sunucu-talep",
     extraFields: [
-      { id: "hostName", label: "Önerilen sunucu adı", kind: "text", required: true, row: "kimlik" },
-      { id: "environment", label: "Ortam", kind: "select", required: true, row: "kimlik", options: [
+      { id: "serverAction", label: "İşlem", kind: "select", required: true, options: [
+        { value: "NEW", label: "Yeni sunucu" },
+        { value: "UPDATE", label: "Güncelleme (CPU / RAM / disk / ağ kartı)" },
+        { value: "REMOVE", label: "Kaldırma" },
+      ] },
+      { id: "hostName", label: "Sunucu adı (yeni için önerilen)", kind: "text", required: true, row: "kimlik" },
+      { id: "hostIp", label: "Mevcut sunucu IP (güncelleme / kaldırma)", kind: "text", row: "kimlik" },
+      { id: "environment", label: "Ortam", kind: "select", row: "kimlik", options: [
         { value: "PROD", label: "Üretim" },
         { value: "TEST", label: "Test" },
         { value: "DEV", label: "Geliştirme" },
         { value: "DR", label: "Felaket kurtarma" },
       ] },
-      { id: "hypervisor", label: "Sanallaştırma platformu", kind: "select", required: true, row: "platform", hint: "Yalnızca hipervizör ailesi. Nessus / Acunetix / OpenShift burada yoktur.", options: [
-        { value: "VMWARE", label: "Sanallaştırma · VMware vSphere / ESXi" },
-        { value: "HYPERV", label: "Sanallaştırma · Microsoft Hyper-V" },
-        { value: "NUTANIX", label: "Sanallaştırma · Nutanix AHV" },
-        { value: "KVM", label: "Sanallaştırma · KVM / Proxmox" },
+      { id: "hypervisor", label: "Sanallaştırma platformu", kind: "select", row: "platform", hint: "Sunucunun sanal mı fiziksel mi olduğunu seçin.", options: [
+        { value: "VIRTUAL", label: "Sanal sunucu" },
         { value: "PHYSICAL", label: "Fiziksel sunucu" },
       ] },
-      { id: "clusterName", label: "Küme / vCenter / cluster", kind: "text", row: "platform" },
-      { id: "operatingSystem", label: "İşletim sistemi", kind: "text", required: true, placeholder: "Windows Server 2022, RHEL 9…" },
+      { id: "clusterName", label: "Küme / yönetim sunucusu", kind: "text", row: "platform" },
+      { id: "operatingSystem", label: "İşletim sistemi", kind: "text", placeholder: "İşletim sistemi ve sürümü" },
       { id: "cpuCount", label: "vCPU / işlemci", kind: "text", row: "kaynak" },
       { id: "ramAmount", label: "RAM miktarı", kind: "text", row: "kaynak" },
       { id: "diskCapacity", label: "Disk kapasitesi", kind: "text", row: "depolama" },
       { id: "interfaceCount", label: "Ağ kartı sayısı", kind: "text", row: "depolama" },
       { id: "purpose", label: "Kullanım amacı / uygulama", kind: "text", fullWidth: true },
+      { id: "macAddress", label: "MAC adresi (güncelleme)", kind: "text", row: "ek" },
+      { id: "changeReason", label: "Değişiklik gerekçesi (güncelleme)", kind: "textarea", fullWidth: true },
+      { id: "backupConfirmed", label: "Yedek alındı mı? (kaldırma)", kind: "select", row: "kapatma", options: [
+        { value: "YES", label: "Evet, yedek doğrulandı" },
+        { value: "NO", label: "Hayır" },
+        { value: "NA", label: "Gerekmiyor" },
+      ] },
+      { id: "decommissionReason", label: "Kaldırma nedeni (kaldırma)", kind: "text", row: "kapatma" },
     ],
   },
   SERVER_UPDATE: {
+    legacy: true,
     key: "SERVER_UPDATE",
     office: "SISTEM",
     label: "Sunucu güncelleme talebi",
@@ -289,11 +326,12 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     ],
   },
   SERVER_REMOVE: {
+    legacy: true,
     key: "SERVER_REMOVE",
     office: "SISTEM",
     label: "Sunucu kaldırma talebi",
     group: "Sunucu işlemleri",
-    description: "vSphere / Hyper-V envanterinden çıkarma ve yedek teyidi.",
+    description: "Sunucunun envanterden çıkarılması ve yedek teyidi.",
     slug: "sunucu-kaldirma",
     extraFields: [
       { id: "hostName", label: "Sunucu / istemci adı", kind: "text", required: true, row: "hedef" },
@@ -311,7 +349,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "Yedekleme (backup) talebi",
     group: "Yedekleme",
-    description: "Veeam Backup & Replication, Veritas NetBackup, Commvault veya Microsoft DPM işi.",
+    description: "Sunucu, istemci veya uygulama için yedekleme işi.",
     slug: "yedekleme",
     extraFields: [
       { id: "hostName", label: "Sunucu / istemci adı", kind: "text", required: true, row: "hedef" },
@@ -345,7 +383,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "Geri yükleme (restore) talebi",
     group: "Yedekleme",
-    description: "Veeam Instant Recovery, NetBackup veya Commvault geri yükleme.",
+    description: "Yedekten dosya, sanal makine veya uygulama geri yükleme.",
     slug: "restore",
     extraFields: [
       { id: "hostName", label: "Sunucu / istemci adı", kind: "text", required: true, row: "hedef" },
@@ -360,7 +398,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
       { id: "restoreType", label: "Geri yükleme türü", kind: "select", row: "urun", options: [
         { value: "FULL_VM", label: "Tam makine / Instant Recovery" },
         { value: "FILE", label: "Dosya / klasör" },
-        { value: "APP", label: "Uygulama (SQL / Exchange)" },
+        { value: "APP", label: "Uygulama (veritabanı / posta)" },
         { value: "DISK", label: "Disk / volume" },
       ] },
       { id: "restoreDate", label: "Geri yükleme noktası", kind: "date", required: true, row: "nokta" },
@@ -370,12 +408,17 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
   MAIL_RELAY: {
     key: "MAIL_RELAY",
     office: "SISTEM",
-    label: "Mail relay talebi",
+    label: "Mail relay (yeni / değişiklik / iptal)",
     group: "Mail relay",
-    description: "Exchange / Exchange Online / postfix izin listesi (anonim veya kimlik doğrulamalı SMTP).",
+    description: "Posta sunucusunda SMTP relay izin listesi (anonim veya kimlik doğrulamalı). İşlem türünü (yeni, değişiklik, iptal) talep içinde seçin.",
     slug: "mail-relay",
     extraFields: [
-      { id: "cidr", label: "Talep edilen IP / CIDR", kind: "text", required: true, placeholder: "10.20.30.0/24", row: "ag" },
+      { id: "relayAction", label: "İşlem", kind: "select", required: true, options: [
+        { value: "NEW", label: "Yeni relay izni" },
+        { value: "CHANGE", label: "Mevcut izni değiştir" },
+        { value: "CANCEL", label: "İzni iptal et" },
+      ] },
+      { id: "cidr", label: "IP / CIDR", kind: "text", required: true, placeholder: "10.20.30.0/24", row: "ag" },
       { id: "smtpHost", label: "SMTP sunucusu", kind: "text", row: "ag", placeholder: "smtp.kurum.gov.tr" },
       { id: "senderDomain", label: "Gönderen alan adı", kind: "text", row: "posta" },
       { id: "relayPurpose", label: "Amaç / uygulama", kind: "text", row: "posta" },
@@ -383,9 +426,11 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
         { value: "YES", label: "Evet" },
         { value: "NO", label: "Hayır" },
       ] },
+      { id: "cancelReason", label: "İptal / değişiklik nedeni", kind: "textarea", fullWidth: true },
     ],
   },
   MAIL_RELAY_CANCEL: {
+    legacy: true,
     key: "MAIL_RELAY_CANCEL",
     office: "SISTEM",
     label: "Mail relay iptal talebi",
@@ -403,23 +448,18 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "Sanal makine / snapshot",
     group: "Sanallaştırma",
-    description: "VMware vSphere, Hyper-V veya Nutanix üzerinde snapshot, klon, vMotion veya şablon.",
+    description: "Sanal makine için snapshot, klon, taşıma veya şablon.",
     slug: "sanal-makine",
     extraFields: [
       { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "islem", options: [
         { value: "SNAPSHOT", label: "Snapshot al" },
         { value: "CLONE", label: "Klon / şablondan oluştur" },
-        { value: "VMOTION", label: "vMotion / canlı taşıma" },
+        { value: "VMOTION", label: "Canlı taşıma" },
         { value: "TEMPLATE", label: "Şablon güncelle" },
         { value: "RESIZE", label: "Kaynak değiştir" },
       ] },
-      { id: "hypervisor", label: "Platform", kind: "select", required: true, row: "islem", hint: "Yalnızca sanallaştırma. Nessus / Acunetix / OpenShift bu listede yoktur.", options: [
-        { value: "VMWARE", label: "Sanallaştırma · VMware vSphere" },
-        { value: "HYPERV", label: "Sanallaştırma · Hyper-V" },
-        { value: "NUTANIX", label: "Sanallaştırma · Nutanix AHV" },
-      ] },
       { id: "hostName", label: "Sanal makine adı", kind: "text", required: true, row: "hedef" },
-      { id: "vcenter", label: "vCenter / SCVMM / Prism", kind: "text", row: "hedef" },
+      { id: "vcenter", label: "Sanallaştırma yönetim sunucusu", kind: "text", row: "hedef" },
       { id: "snapshotRetain", label: "Snapshot saklama", kind: "text", placeholder: "24 saat / bakım bitene kadar" },
     ],
   },
@@ -428,16 +468,16 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "Paket / uygulama dağıtımı",
     group: "Uç nokta yönetimi",
-    description: "Microsoft Configuration Manager (SCCM/MECM) veya Intune uygulama / güncelleme koleksiyonu.",
+    description: "Merkezi yönetim veya bulut cihaz yönetimi üzerinden uygulama / güncelleme koleksiyonu.",
     slug: "paket-dagitim",
     extraFields: [
       { id: "platform", label: "Dağıtım platformu", kind: "select", required: true, row: "platform", options: [
-        { value: "SCCM", label: "Microsoft Configuration Manager (SCCM / MECM)" },
-        { value: "INTUNE", label: "Microsoft Intune" },
-        { value: "BOTH", label: "SCCM + Intune (co-management)" },
+        { value: "SCCM", label: "Merkezi uç nokta yönetimi" },
+        { value: "INTUNE", label: "Bulut cihaz yönetimi" },
+        { value: "BOTH", label: "Her ikisi (birlikte yönetim)" },
       ] },
       { id: "packageName", label: "Paket / uygulama adı", kind: "text", required: true, row: "platform" },
-      { id: "collection", label: "Koleksiyon / Azure AD grubu", kind: "text", row: "hedef" },
+      { id: "collection", label: "Koleksiyon / dizin grubu", kind: "text", row: "hedef" },
       { id: "deployIntent", label: "Dağıtım amacı", kind: "select", row: "hedef", options: [
         { value: "REQUIRED", label: "Zorunlu (Required)" },
         { value: "AVAILABLE", label: "Kullanılabilir (Available)" },
@@ -451,7 +491,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "Dosya paylaşımı / DFS",
     group: "Depolama",
-    description: "Windows dosya sunucusu, DFS Namespace veya SMB paylaşımı.",
+    description: "Dosya sunucusu, DFS Namespace veya SMB paylaşımı.",
     slug: "dosya-paylasim",
     extraFields: [
       { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "islem", options: [
@@ -474,7 +514,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "Sertifika / PKI",
     group: "Kimlik ve sertifika",
-    description: "Microsoft AD CS, genel CA veya iç PKI sunucu / uygulama sertifikası.",
+    description: "İç PKI veya genel CA sunucu / uygulama sertifikası.",
     slug: "sertifika",
     extraFields: [
       { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "islem", options: [
@@ -502,7 +542,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SISTEM",
     label: "Posta kutusu / dağıtım listesi",
     group: "E-posta",
-    description: "Microsoft Exchange veya Exchange Online posta kutusu, paylaşılan kutu, dağıtım listesi.",
+    description: "Posta kutusu, paylaşılan kutu veya dağıtım listesi.",
     slug: "eposta-kutusu",
     extraFields: [
       { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "islem", options: [
@@ -514,10 +554,10 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
       ] },
       { id: "mailbox", label: "Posta adresi", kind: "text", required: true, row: "islem" },
       { id: "licenseSku", label: "Lisans / SKU", kind: "select", row: "lisans", options: [
-        { value: "E3", label: "Microsoft 365 E3" },
-        { value: "E5", label: "Microsoft 365 E5" },
-        { value: "EXCHANGE_ONLINE", label: "Exchange Online" },
-        { value: "ONPREM", label: "Yerel Exchange" },
+        { value: "E3", label: "Standart lisans" },
+        { value: "E5", label: "Gelişmiş lisans" },
+        { value: "EXCHANGE_ONLINE", label: "Bulut posta" },
+        { value: "ONPREM", label: "Yerel posta sunucusu" },
       ] },
       { id: "quota", label: "Kota / arşiv", kind: "text", row: "lisans" },
     ],
@@ -527,7 +567,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "NETWORK",
     label: "NAC istisna talebi",
     group: "NAC istisna",
-    description: "Cisco ISE, Aruba ClearPass veya FortiNAC üzerinde politika / duruş / karantina istisnası (MAC listesi, Authorization Exception, ANC kaldırma).",
+    description: "NAC üzerinde politika / duruş / karantina istisnası (MAC listesi, yetkilendirme istisnası, karantina kaldırma).",
     slug: "nac-istisna",
     extraFields: [
       { id: "nacProduct", label: "NAC ürünü", kind: "select", required: true, row: "urun", options: [
@@ -574,7 +614,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
       { id: "switchName", label: "Anahtar / NAS adı", kind: "text", row: "vlan" },
       { id: "switchPort", label: "Port", kind: "text", row: "vlan", placeholder: "Gi1/0/12" },
       { id: "requestedVlan", label: "İstenen VLAN / Authz profili", kind: "text", row: "sonuc", placeholder: "PROD / Printer_AuthZ" },
-      { id: "identityGroup", label: "ISE / ClearPass Identity Group", kind: "text", row: "sonuc", placeholder: "Exception_Printers" },
+      { id: "identityGroup", label: "NAC kimlik grubu", kind: "text", row: "sonuc", placeholder: "Exception_Printers" },
       { id: "exceptionScope", label: "Kapsam", kind: "select", required: true, row: "sure", options: [
         { value: "SINGLE_MAC", label: "Tek MAC" },
         { value: "OUI", label: "OUI / üretici" },
@@ -606,12 +646,12 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
         { value: "DOMAIN_CONTROLLER", label: "Domain Controller" },
         { value: "APP_SERVER", label: "Uygulama sunucusu" },
         { value: "DB_SERVER", label: "Veritabanı sunucusu" },
-        { value: "VMWARE", label: "VMware / ESXi" },
-        { value: "HYPERV", label: "Hyper-V" },
+        { value: "VMWARE", label: "Sanallaştırma ana makinesi" },
+        { value: "HYPERV", label: "Sanallaştırma kümesi / yönetim sunucusu" },
         { value: "NETWORK_DEVICE", label: "Ağ cihazı" },
         { value: "OTHER", label: "Diğer" },
       ] },
-      { id: "vendorOs", label: "Üretici / işletim sistemi", kind: "text", row: "kategori", placeholder: "Windows Server 2022, RHEL 9…" },
+      { id: "vendorOs", label: "Üretici / işletim sistemi", kind: "text", row: "kategori", placeholder: "İşletim sistemi ve sürümü" },
       { id: "credentialType", label: "Keşif / kimlik yöntemi", kind: "select", required: true, row: "kimlik", options: [
         { value: "SNMP", label: "SNMP" },
         { value: "WMI", label: "WMI" },
@@ -637,7 +677,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
         { value: "BASIC", label: "Temel: CPU, bellek, disk" },
         { value: "FULL_OS", label: "Tam OS + arayüz + servis" },
         { value: "INTERFACE", label: "Ağ arayüzü / bant genişliği" },
-        { value: "PROCESS_SERVICE", label: "Süreç / Windows servisi" },
+        { value: "PROCESS_SERVICE", label: "Süreç / servis" },
         { value: "APP_URL", label: "Uygulama / URL (Applications Manager)" },
         { value: "CUSTOM", label: "Özel şablon" },
       ] },
@@ -669,7 +709,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "NETWORK",
     label: "VLAN / SVI talebi",
     group: "Ağ segmentasyonu",
-    description: "Cisco Catalyst / Nexus veya Juniper EX üzerinde VLAN, SVI ve DHCP helper.",
+    description: "Anahtar üzerinde VLAN, SVI ve DHCP helper.",
     slug: "vlan",
     extraFields: [
       { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "islem", options: [
@@ -690,7 +730,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "NETWORK",
     label: "Yük dengeleyici (VIP / pool)",
     group: "Yük dengeleme",
-    description: "F5 BIG-IP, Citrix ADC (NetScaler), NGINX Plus veya HAProxy sanal sunucu.",
+    description: "Yük dengeleyicide sanal sunucu (VIP), havuz, sertifika veya politika.",
     slug: "yuk-dengeleyici",
     extraFields: [
       { id: "lbProduct", label: "Ürün", kind: "select", required: true, row: "urun", options: [
@@ -717,7 +757,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "NETWORK",
     label: "Kablosuz ağ / SSID",
     group: "Kablosuz",
-    description: "Cisco WLC / Catalyst 9800, Aruba Central veya FortiAP SSID, VLAN ve RADIUS.",
+    description: "Kablosuz denetleyicide SSID, VLAN ve RADIUS tanımı.",
     slug: "kablosuz",
     extraFields: [
       { id: "wlanProduct", label: "Kablosuz platform", kind: "select", row: "urun", options: [
@@ -742,10 +782,10 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "İntranet erişim talebi",
     group: "Güvenlik duvarı",
-    description: "Palo Alto NGFW, FortiGate, Check Point veya Cisco ASA/FTD kuralı.",
+    description: "Güvenlik duvarında kaynak, hedef ve port bazında erişim kuralı.",
     slug: "intranet-erisim",
     extraFields: [
-      { id: "fwVendor", label: "Güvenlik duvarı", kind: "select", row: "urun", options: [
+      { id: "fwVendor", label: "Güvenlik duvarı (envanter)", kind: "select", row: "urun", options: [
         { value: "PALO", label: "Palo Alto Networks" },
         { value: "FORTINET", label: "FortiGate" },
         { value: "CHECKPOINT", label: "Check Point" },
@@ -768,10 +808,10 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "İnternet erişim talebi",
     group: "Güvenlik duvarı",
-    description: "URL filtre, App-ID veya kategori istisnası (Palo Alto / FortiGate / Check Point).",
+    description: "URL filtre, uygulama veya kategori istisnası.",
     slug: "internet-erisim",
     extraFields: [
-      { id: "fwVendor", label: "Güvenlik duvarı", kind: "select", row: "urun", options: [
+      { id: "fwVendor", label: "Güvenlik duvarı (envanter)", kind: "select", row: "urun", options: [
         { value: "PALO", label: "Palo Alto Networks" },
         { value: "FORTINET", label: "FortiGate" },
         { value: "CHECKPOINT", label: "Check Point" },
@@ -789,7 +829,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "Log alma talebi",
     group: "SIEM / Log",
-    description: "Splunk, IBM QRadar, Microsoft Sentinel veya ArcSight kaynak onboarding (CEF / LEEF / Syslog).",
+    description: "SIEM'e yeni log kaynağı ekleme (CEF / LEEF / Syslog).",
     slug: "log-alma",
     extraFields: [
       { id: "siemPlatform", label: "SIEM platformu", kind: "select", required: true, row: "platform", options: [
@@ -803,7 +843,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
         { value: "CEF", label: "CEF" },
         { value: "LEEF", label: "LEEF" },
         { value: "SYSLOG", label: "Syslog (RFC5424)" },
-        { value: "WIN_EVENT", label: "Windows Event / WEF" },
+        { value: "WIN_EVENT", label: "İşletim sistemi olay günlüğü" },
         { value: "API", label: "API / HEC" },
       ] },
       { id: "systemName", label: "Log alınacak sistem adı", kind: "text", required: true, row: "sistem" },
@@ -842,7 +882,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "Forensic talep",
     group: "Adli bilişim",
-    description: "OpenText EnCase, Exterro FTK veya Magnet AXIOM ile delil alma ve zincir belgesi.",
+    description: "Adli bilişim aracıyla delil alma ve delil zinciri belgesi.",
     slug: "forensic",
     extraFields: [
       { id: "forensicTool", label: "Adli bilişim aracı", kind: "select", required: true, row: "arac", options: [
@@ -871,10 +911,10 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "Zafiyet tarama talep",
     group: "Zafiyet",
-    description: "Tenable Nessus/io, Qualys VMDR, OpenVAS veya Acunetix / Burp DAST.",
+    description: "Altyapı veya uygulama için zafiyet taraması.",
     slug: "zafiyet-tarama",
     extraFields: [
-      { id: "scanProduct", label: "Tarama ürünü", kind: "select", required: true, row: "urun", hint: "Yalnızca zafiyet tarama ailesi. VMware / OpenShift burada yoktur.", options: [
+      { id: "scanProduct", label: "Tarama ürünü", kind: "select", required: true, row: "urun", hint: "Yalnızca zafiyet tarama ürünleri.", options: [
         { value: "NESSUS", label: "Ağ · Tenable Nessus / Tenable.io" },
         { value: "QUALYS", label: "Ağ · Qualys VMDR" },
         { value: "OPENVAS", label: "Ağ · OpenVAS / Greenbone" },
@@ -902,7 +942,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "DNS talep",
     group: "DNS / VPN",
-    description: "Microsoft DNS, Infoblox veya BIND kaydı.",
+    description: "DNS kaydı ekleme, değiştirme veya silme.",
     slug: "dns",
     extraFields: [
       { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "islem", options: [
@@ -935,7 +975,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "VPN talep",
     group: "DNS / VPN",
-    description: "Cisco AnyConnect / Secure Client, FortiClient veya Palo Alto GlobalProtect.",
+    description: "Uzaktan erişim VPN istemcisi hesabı ve profili.",
     slug: "vpn",
     extraFields: [
       { id: "vpnProduct", label: "VPN ürünü", kind: "select", required: true, row: "urun", options: [
@@ -958,7 +998,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "Taşınabilir cihaz tarama",
     group: "Cihaz tarama",
-    description: "USB / harici disk zararlı tarama (Defender, CrowdStrike veya kurum AV).",
+    description: "USB / harici disk için zararlı yazılım taraması.",
     slug: "tasinabilir-tarama",
     extraFields: [
       { id: "deviceOrigin", label: "Cihazın geldiği yer", kind: "text", row: "cihaz" },
@@ -977,7 +1017,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "Antivirüs talep",
     group: "Antivirüs",
-    description: "Microsoft Defender, CrowdStrike Falcon veya Symantec istisna / durdurma.",
+    description: "Antivirüs / EDR istisnası veya geçici durdurma.",
     slug: "antivirus",
     extraFields: [
       { id: "avProduct", label: "AV / EDR ürünü", kind: "select", row: "urun", options: [
@@ -997,7 +1037,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "DLP istisna / politika",
     group: "Veri kaybı önleme",
-    description: "Forcepoint DLP, Symantec DLP veya Microsoft Purview istisnası.",
+    description: "Veri kaybı önleme (DLP) politikası istisnası.",
     slug: "dlp-istisna",
     extraFields: [
       { id: "dlpProduct", label: "DLP ürünü", kind: "select", required: true, row: "urun", options: [
@@ -1026,7 +1066,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "WAF kural / istisna",
     group: "Uygulama güvenliği",
-    description: "F5 Advanced WAF, Imperva, Cloudflare WAF veya Azure Front Door kuralı.",
+    description: "Web uygulama güvenlik duvarında (WAF) kural veya istisna.",
     slug: "waf",
     extraFields: [
       { id: "wafProduct", label: "WAF ürünü", kind: "select", required: true, row: "urun", options: [
@@ -1051,7 +1091,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SIBER",
     label: "PAM / ayrıcalıklı erişim",
     group: "Ayrıcalıklı erişim",
-    description: "CyberArk, BeyondTrust veya Delinea Safe / jump host erişimi.",
+    description: "Ayrıcalıklı erişim kasası (Safe) veya jump host erişimi.",
     slug: "pam-erisim",
     extraFields: [
       { id: "pamProduct", label: "PAM ürünü", kind: "select", required: true, row: "urun", options: [
@@ -1076,7 +1116,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "YAZILIM",
     label: "Yazılım projesi / ürün kaydı",
     group: "Proje ve ürün",
-    description: "Atlassian Jira projesi, Confluence alanı veya Azure DevOps ekip projesi.",
+    description: "Proje, wiki alanı veya ekip projesi açma.",
     slug: "yazilim-projesi",
     extraFields: [
       { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "islem", options: [
@@ -1105,7 +1145,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "YAZILIM",
     label: "Kaynak kod deposu erişimi",
     group: "Kaynak kod",
-    description: "GitLab, GitHub Enterprise, Azure Repos veya Bitbucket yetkisi.",
+    description: "Kaynak kod deposu yetkisi.",
     slug: "depo-erisim",
     extraFields: [
       { id: "scmProduct", label: "SCM ürünü", kind: "select", required: true, row: "urun", options: [
@@ -1134,7 +1174,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "YAZILIM",
     label: "CI/CD boru hattı",
     group: "CI / CD",
-    description: "Jenkins, GitLab CI, Azure Pipelines veya GitHub Actions işi.",
+    description: "CI/CD pipeline işi oluşturma veya değiştirme.",
     slug: "ci-cd",
     extraFields: [
       { id: "cicdProduct", label: "CI/CD ürünü", kind: "select", required: true, row: "urun", options: [
@@ -1164,7 +1204,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "YAZILIM",
     label: "Sürüm / canlıya alma",
     group: "CI / CD",
-    description: "Azure DevOps Release, GitLab Deploy veya Jenkins production job — değişiklik kaydıyla uyumlu.",
+    description: "Üretim yayını (deploy) işi — değişiklik kaydıyla uyumlu.",
     slug: "yayin-dagitim",
     extraFields: [
       { id: "releaseTool", label: "Yayın aracı", kind: "select", row: "urun", options: [
@@ -1189,15 +1229,15 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "YAZILIM",
     label: "Test / geliştirme ortamı",
     group: "Ortamlar",
-    description: "Kubernetes (OpenShift / AKS / Rancher), Docker veya klasik uygulama sunucusu ortamı.",
+    description: "Konteyner platformu veya klasik uygulama sunucusu ortamı.",
     slug: "test-ortami",
     extraFields: [
-      { id: "platform", label: "Ortam platformu", kind: "select", required: true, row: "platform", hint: "Yazılım / konteyner ortamı. VMware hipervizör ve Nessus taraması burada yoktur.", options: [
-        { value: "OPENSHIFT", label: "Yazılım ortamı · Red Hat OpenShift" },
-        { value: "AKS", label: "Yazılım ortamı · Azure Kubernetes Service" },
-        { value: "RANCHER", label: "Yazılım ortamı · SUSE Rancher" },
-        { value: "DOCKER", label: "Yazılım ortamı · Docker / compose" },
-        { value: "IIS", label: "Uygulama sunucusu · IIS / Windows" },
+      { id: "platform", label: "Ortam platformu", kind: "select", required: true, row: "platform", hint: "Yazılım / konteyner ortamı.", options: [
+        { value: "OPENSHIFT", label: "Yazılım ortamı · Konteyner platformu" },
+        { value: "AKS", label: "Yazılım ortamı · Yönetilen bulut konteyner" },
+        { value: "RANCHER", label: "Yazılım ortamı · Konteyner yönetim platformu" },
+        { value: "DOCKER", label: "Yazılım ortamı · Tek sunucu konteyner" },
+        { value: "IIS", label: "Uygulama sunucusu · Web sunucusu" },
         { value: "TOMCAT", label: "Uygulama sunucusu · Apache Tomcat / WildFly" },
       ] },
       { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "platform", options: [
@@ -1215,7 +1255,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "YAZILIM",
     label: "API / entegrasyon",
     group: "Entegrasyon",
-    description: "Apigee, Kong, Azure API Management veya kurum ESB üzerinden API anahtarı / tüketici.",
+    description: "API ağ geçidi veya kurum ESB üzerinden API anahtarı / tüketici.",
     slug: "api-entegrasyon",
     extraFields: [
       { id: "apimProduct", label: "API platformu", kind: "select", required: true, row: "urun", options: [
@@ -1241,7 +1281,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "YAZILIM",
     label: "Kod kalitesi / SAST",
     group: "Kalite kapısı",
-    description: "SonarQube, Fortify, Checkmarx veya GitLab SAST kalite kapısı.",
+    description: "Kod kalite ve güvenlik taraması (SAST) kalite kapısı.",
     slug: "kod-kalite",
     extraFields: [
       { id: "qualityTool", label: "Kalite aracı", kind: "select", required: true, row: "urun", options: [
@@ -1267,7 +1307,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "VERITABANI",
     label: "Veritabanı / şema oluşturma",
     group: "Veritabanı yaşam döngüsü",
-    description: "Oracle, Microsoft SQL Server, PostgreSQL veya MySQL instance / şema.",
+    description: "Veritabanı instance veya şema açma.",
     slug: "vt-olusturma",
     extraFields: [
       { id: "dbEngine", label: "Motor", kind: "select", required: true, row: "motor", options: [
@@ -1296,7 +1336,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "VERITABANI",
     label: "Veritabanı kullanıcısı / yetki",
     group: "Erişim ve yetki",
-    description: "Oracle role/grant, SQL Server login, PostgreSQL role veya MongoDB user.",
+    description: "Veritabanı kullanıcısı, rol veya yetki tanımı.",
     slug: "vt-kullanici",
     extraFields: [
       { id: "dbEngine", label: "Motor", kind: "select", required: true, row: "motor", options: [
@@ -1364,7 +1404,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "VERITABANI",
     label: "Veritabanı yedeği / RMAN",
     group: "Yedek ve kurtarma",
-    description: "Oracle RMAN, SQL Server backup, pg_basebackup / pgBackRest veya mongodump.",
+    description: "Veritabanı yedekleme veya geri yükleme.",
     slug: "vt-yedek",
     extraFields: [
       { id: "dbEngine", label: "Motor", kind: "select", required: true, row: "motor", options: [
@@ -1394,7 +1434,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "VERITABANI",
     label: "Performans / AWR incelemesi",
     group: "İşletim",
-    description: "Oracle AWR/ASH, SQL Server Query Store veya pg_stat_statements incelemesi.",
+    description: "Veritabanı performans analizi ve iyileştirme.",
     slug: "vt-performans",
     extraFields: [
       { id: "dbEngine", label: "Motor", kind: "select", required: true, row: "motor", options: [
@@ -1450,7 +1490,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "VERITABANI",
     label: "Test ortamı yenileme",
     group: "Veri hizmetleri",
-    description: "Üretimden teste klon (Oracle PDB clone, SQL Server restore, PostgreSQL refresh).",
+    description: "Üretimden test ortamına veritabanı klonu / yenileme.",
     slug: "vt-yenileme",
     extraFields: [
       { id: "dbEngine", label: "Motor", kind: "select", required: true, row: "motor", options: [
@@ -1547,7 +1587,7 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
     office: "SERVIS",
     label: "Yazılım kurulumu / lisans",
     group: "Yazılım hizmeti",
-    description: "ServiceNow SAM, Microsoft Intune Company Portal veya SCCM yazılım kataloğu.",
+    description: "Yazılım kataloğundan uygulama kurulumu.",
     slug: "yazilim-kurulum",
     extraFields: [
       { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "islem", options: [
@@ -1561,12 +1601,459 @@ export const REQUEST_TYPES: Record<RequestTypeKey, RequestTypeDef> = {
       { id: "hostName", label: "Hedef cihaz", kind: "text", row: "lisans" },
     ],
   },
+
+  FW_DNAT: {
+    key: "FW_DNAT",
+    office: "SIBER",
+    label: "DNAT / port yönlendirme",
+    group: "Güvenlik duvarı",
+    description: "Dış IP / porttan iç sunucuya hedef NAT (VIP, port forwarding) kuralı.",
+    slug: "dnat",
+    extraFields: [
+      { id: "fwVendor", label: "Güvenlik duvarı (envanter)", kind: "select", required: true, row: "urun", options: [] },
+      { id: "publicIp", label: "Dış (yayın) IP / FQDN", kind: "text", required: true, row: "dis" },
+      { id: "publicPort", label: "Dış port", kind: "text", required: true, row: "dis", placeholder: "443" },
+      { id: "internalIp", label: "İç sunucu IP", kind: "text", required: true, row: "ic" },
+      { id: "internalPort", label: "İç port", kind: "text", required: true, row: "ic", placeholder: "443" },
+      { id: "natProtocol", label: "Protokol", kind: "select", row: "sure", options: [
+        { value: "TCP", label: "TCP" },
+        { value: "UDP", label: "UDP" },
+        { value: "ANY", label: "TCP + UDP" },
+      ] },
+      { id: "sourceIp", label: "İzinli kaynak (boşsa herkes)", kind: "text", row: "sure", placeholder: "Any / 203.0.113.0/24" },
+      { id: "validUntil", label: "Geçerlilik süresi", kind: "date" },
+    ],
+  },
+  FW_SNAT: {
+    key: "FW_SNAT",
+    office: "SIBER",
+    label: "SNAT / çıkış NAT",
+    group: "Güvenlik duvarı",
+    description: "İç ağdan çıkışta kaynak adres çevirisi (NAT havuzu, sabit çıkış IP).",
+    slug: "snat",
+    extraFields: [
+      { id: "fwVendor", label: "Güvenlik duvarı (envanter)", kind: "select", required: true, row: "urun", options: [] },
+      { id: "sourceNet", label: "Kaynak ağ / IP", kind: "text", required: true, row: "kaynak" },
+      { id: "natIp", label: "NAT (çıkış) IP / havuz", kind: "text", required: true, row: "kaynak" },
+      { id: "destTarget", label: "Hedef IP / FQDN", kind: "text", row: "hedef" },
+      { id: "portProtocol", label: "Port / protokol", kind: "text", row: "hedef", placeholder: "443/TCP" },
+      { id: "validUntil", label: "Geçerlilik süresi", kind: "date" },
+    ],
+  },
+  FW_IPSEC_VPN: {
+    key: "FW_IPSEC_VPN",
+    office: "SIBER",
+    label: "IPSEC VPN (site-to-site)",
+    group: "Güvenlik duvarı",
+    description: "Kurumlar / lokasyonlar arası IPSEC tünel. Ön paylaşımlı anahtarı talebe YAZMAYIN; ayrı güvenli kanaldan iletilir.",
+    slug: "ipsec-vpn",
+    extraFields: [
+      { id: "fwVendor", label: "Güvenlik duvarı (envanter)", kind: "select", required: true, row: "urun", options: [] },
+      { id: "peerName", label: "Karşı taraf (kurum / lokasyon)", kind: "text", required: true, row: "karsi" },
+      { id: "peerIp", label: "Karşı taraf genel IP", kind: "text", required: true, row: "karsi" },
+      { id: "localSubnet", label: "Yerel ağ (local subnet)", kind: "text", required: true, row: "ag", placeholder: "10.10.0.0/24" },
+      { id: "remoteSubnet", label: "Uzak ağ (remote subnet)", kind: "text", required: true, row: "ag", placeholder: "172.16.5.0/24" },
+      { id: "ikeVersion", label: "IKE sürümü", kind: "select", row: "ike", options: [
+        { value: "IKEV2", label: "IKEv2" },
+        { value: "IKEV1", label: "IKEv1" },
+      ] },
+      { id: "cryptoSuite", label: "Şifreleme / hash / DH grubu", kind: "text", row: "ike", placeholder: "AES256 · SHA256 · DH14" },
+      { id: "portProtocol", label: "İzin verilecek port / protokol", kind: "text", row: "izin", placeholder: "443/TCP, 1433/TCP" },
+      { id: "validUntil", label: "Geçerlilik süresi", kind: "date", row: "izin" },
+    ],
+  },
+  FW_SSL_VPN: {
+    key: "FW_SSL_VPN",
+    office: "SIBER",
+    label: "SSL-VPN kullanıcı / portal erişimi",
+    group: "Güvenlik duvarı",
+    description: "Uzaktan çalışan kullanıcı veya grubun SSL-VPN portalı ve erişebileceği ağlar.",
+    slug: "ssl-vpn",
+    extraFields: [
+      { id: "fwVendor", label: "Güvenlik duvarı (envanter)", kind: "select", required: true, row: "urun", options: [] },
+      { id: "vpnUser", label: "Kullanıcı / AD grubu", kind: "text", required: true, row: "kullanici" },
+      { id: "vpnPortal", label: "Portal / profil", kind: "text", row: "kullanici" },
+      { id: "destNetworks", label: "Erişilecek ağ / sunucular", kind: "textarea", required: true, fullWidth: true, placeholder: "10.10.20.0/24, evrak.kurum.local" },
+      { id: "portProtocol", label: "Port / protokol", kind: "text", row: "izin", placeholder: "443/TCP, 3389/TCP" },
+      { id: "mfa", label: "Çok faktörlü doğrulama", kind: "select", row: "izin", options: [
+        { value: "REQUIRED", label: "Zorunlu" },
+        { value: "EXCEPTION", label: "İstisna (gerekçeli)" },
+      ] },
+      { id: "validUntil", label: "Geçerlilik süresi", kind: "date" },
+    ],
+  },
+  FW_RULE_REMOVE: {
+    key: "FW_RULE_REMOVE",
+    office: "SIBER",
+    label: "Kural silme / kapatma / gözden geçirme",
+    group: "Güvenlik duvarı",
+    description: "Artık gerekmeyen veya süresi dolan güvenlik duvarı kuralının kapatılması ya da periyodik gözden geçirme.",
+    slug: "kural-silme",
+    extraFields: [
+      { id: "fwVendor", label: "Güvenlik duvarı (envanter)", kind: "select", required: true, row: "urun", options: [] },
+      { id: "ruleName", label: "Kural adı", kind: "text", required: true, row: "kural" },
+      { id: "ruleId", label: "Kural ID / sıra no", kind: "text", row: "kural" },
+      { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "islem", options: [
+        { value: "DISABLE", label: "Devre dışı bırak" },
+        { value: "DELETE", label: "Sil" },
+        { value: "REVIEW", label: "Gözden geçir / yeniden onayla" },
+      ] },
+      { id: "relatedRequest", label: "İlgili talep no", kind: "text", row: "islem" },
+    ],
+  },
+  NET_ROUTE: {
+    key: "NET_ROUTE",
+    office: "NETWORK",
+    label: "Statik rota / dinamik yönlendirme",
+    group: "Yönlendirme",
+    description: "Statik rota, BGP veya OSPF komşuluğu / ağ duyurusu.",
+    slug: "rota",
+    extraFields: [
+      { id: "routeDevice", label: "Ağ cihazı (envanter)", kind: "select", required: true, row: "cihaz", options: [] },
+      { id: "routeProtocol", label: "Yönlendirme", kind: "select", row: "cihaz", options: [
+        { value: "STATIC", label: "Statik rota" },
+        { value: "BGP", label: "BGP" },
+        { value: "OSPF", label: "OSPF" },
+      ] },
+      { id: "destNetwork", label: "Hedef ağ", kind: "text", required: true, row: "rota", placeholder: "172.16.0.0/16" },
+      { id: "nextHop", label: "Sonraki sıçrama (next-hop)", kind: "text", row: "rota" },
+      { id: "routeNote", label: "Metrik / AS no / alan", kind: "text" },
+    ],
+  },
+  DHCP_SCOPE: {
+    key: "DHCP_SCOPE",
+    office: "NETWORK",
+    label: "DHCP kapsamı / rezervasyon",
+    group: "IP ve ağ",
+    description: "Yeni DHCP kapsamı, aralık değişikliği veya MAC bazlı IP rezervasyonu.",
+    slug: "dhcp",
+    extraFields: [
+      { id: "scopeVlan", label: "VLAN", kind: "text", row: "ag" },
+      { id: "scopeSubnet", label: "Alt ağ", kind: "text", required: true, row: "ag", placeholder: "10.20.30.0/24" },
+      { id: "scopeRange", label: "Dağıtım aralığı", kind: "text", row: "aralik", placeholder: "10.20.30.50 - 10.20.30.200" },
+      { id: "dnsServers", label: "DNS sunucuları", kind: "text", row: "aralik" },
+      { id: "reservation", label: "Rezervasyon (MAC → IP)", kind: "textarea", fullWidth: true, placeholder: "AA:BB:CC:DD:EE:FF → 10.20.30.10" },
+    ],
+  },
+  MAIL_SECURITY: {
+    key: "MAIL_SECURITY",
+    office: "SIBER",
+    label: "E-posta güvenliği istisnası",
+    group: "Uygulama güvenliği",
+    description: "E-posta güvenlik ağ geçidinde gönderen / alan adı için izin (allow) veya engel (block) listesi.",
+    slug: "eposta-guvenligi",
+    extraFields: [
+      { id: "mailGateway", label: "E-posta güvenlik ürünü (envanter)", kind: "select", row: "urun", options: [] },
+      { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "urun", options: [
+        { value: "ALLOW", label: "İzin listesine ekle" },
+        { value: "BLOCK", label: "Engel listesine ekle" },
+        { value: "RELEASE", label: "Karantinadan serbest bırak" },
+      ] },
+      { id: "senderDomain", label: "Gönderen adres / alan adı", kind: "text", required: true, row: "adres" },
+      { id: "recipient", label: "Alıcı / grup", kind: "text", row: "adres" },
+    ],
+  },
+  PENTEST: {
+    key: "PENTEST",
+    office: "SIBER",
+    label: "Sızma testi / güvenlik değerlendirmesi",
+    group: "Güvenlik testi",
+    description: "Uygulama veya altyapı için kapsam, tarih aralığı ve iletişim bilgisiyle test talebi.",
+    slug: "sizma-testi",
+    extraFields: [
+      { id: "testType", label: "Test türü", kind: "select", required: true, row: "tur", options: [
+        { value: "WEB", label: "Web uygulaması" },
+        { value: "NETWORK", label: "Ağ / altyapı" },
+        { value: "MOBILE", label: "Mobil uygulama" },
+        { value: "SOCIAL", label: "Sosyal mühendislik" },
+      ] },
+      { id: "testScope", label: "Kapsam (IP / URL)", kind: "textarea", required: true, fullWidth: true },
+      { id: "windowStart", label: "Test başlangıcı", kind: "date", row: "tarih" },
+      { id: "windowEnd", label: "Test bitişi", kind: "date", row: "tarih" },
+      { id: "testContact", label: "Sorumlu kişi / telefon", kind: "text" },
+    ],
+  },
+  SFTP_ACCOUNT: {
+    key: "SFTP_ACCOUNT",
+    office: "SISTEM",
+    label: "SFTP / dosya aktarım hesabı",
+    group: "Dosya ve paylaşım",
+    description: "Kurum içi veya dış taraf için SFTP / FTPS hesabı ve dizin yetkisi.",
+    slug: "sftp-hesabi",
+    extraFields: [
+      { id: "sftpServer", label: "SFTP sunucusu (envanter)", kind: "select", row: "sunucu", options: [] },
+      { id: "sftpAccount", label: "Hesap adı", kind: "text", required: true, row: "sunucu" },
+      { id: "homeDir", label: "Dizin", kind: "text", row: "izin", placeholder: "/data/kurum-x" },
+      { id: "permission", label: "Yetki", kind: "select", row: "izin", options: [
+        { value: "READ", label: "Yalnızca okuma" },
+        { value: "WRITE", label: "Okuma + yazma" },
+      ] },
+      { id: "sourceIp", label: "İzinli kaynak IP", kind: "text", row: "kaynak" },
+      { id: "validUntil", label: "Geçerlilik süresi", kind: "date", row: "kaynak" },
+    ],
+  },
+
+  WEB_GATEWAY: {
+    key: "WEB_GATEWAY",
+    office: "SIBER",
+    label: "Web gateway / proxy erişimi",
+    group: "Web güvenliği",
+    description: "URL / kategori izni veya engeli, SSL inceleme istisnası ya da kullanıcı grubu politika değişikliği.",
+    slug: "web-gateway",
+    extraFields: [
+      { id: "wgProduct", label: "Web gateway (envanter)", kind: "select", row: "urun", options: [] },
+      { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "urun", options: [
+        { value: "ALLOW", label: "URL / kategori izni" },
+        { value: "BLOCK", label: "URL / kategori engeli" },
+        { value: "SSL_BYPASS", label: "SSL inceleme istisnası" },
+        { value: "POLICY", label: "Kullanıcı grubu politika değişikliği" },
+      ] },
+      { id: "destTarget", label: "URL / alan adı / kategori", kind: "text", required: true, row: "hedef" },
+      { id: "scopeWho", label: "Kullanıcı / grup / IP", kind: "text", row: "hedef" },
+      { id: "validUntil", label: "Geçerlilik süresi", kind: "date" },
+    ],
+  },
+  SANDBOX: {
+    key: "SANDBOX",
+    office: "SIBER",
+    label: "Sandbox analiz talebi",
+    group: "Sandbox / tehdit analizi",
+    description: "Şüpheli dosya, URL veya e-posta ekinin sandbox ortamında analizi ya da sandbox istisnası.",
+    slug: "sandbox",
+    extraFields: [
+      { id: "sandboxProduct", label: "Sandbox (envanter)", kind: "select", row: "urun", options: [] },
+      { id: "sampleKind", label: "Örnek türü", kind: "select", required: true, row: "urun", options: [
+        { value: "FILE", label: "Dosya" },
+        { value: "URL", label: "URL" },
+        { value: "MAIL_ATTACHMENT", label: "E-posta eki" },
+        { value: "EXCEPTION", label: "Sandbox istisnası" },
+      ] },
+      { id: "sampleRef", label: "Dosya adı / hash / URL", kind: "text", required: true, fullWidth: true },
+      { id: "analysisReason", label: "Analiz nedeni", kind: "textarea", fullWidth: true },
+    ],
+  },
+  IOC_BLOCK: {
+    key: "IOC_BLOCK",
+    office: "SIBER",
+    label: "IOC engelleme (IP / alan adı / hash)",
+    group: "Tehdit istihbaratı",
+    description: "Tehdit göstergesinin (IOC) güvenlik katmanlarında engellenmesi.",
+    slug: "ioc-engelleme",
+    extraFields: [
+      { id: "iocType", label: "Gösterge türü", kind: "select", required: true, row: "ioc", options: [
+        { value: "IP", label: "IP adresi" },
+        { value: "DOMAIN", label: "Alan adı" },
+        { value: "URL", label: "URL" },
+        { value: "HASH", label: "Dosya hash" },
+      ] },
+      { id: "blockPoint", label: "Engellenecek katman", kind: "select", row: "ioc", options: [
+        { value: "FIREWALL", label: "Güvenlik duvarı" },
+        { value: "WEB", label: "Web gateway" },
+        { value: "MAIL", label: "E-posta güvenliği" },
+        { value: "EDR", label: "Uç nokta koruma" },
+        { value: "DNS", label: "DNS" },
+      ] },
+      { id: "iocValue", label: "Gösterge değerleri (her satıra bir tane)", kind: "textarea", required: true, fullWidth: true },
+      { id: "iocSource", label: "Kaynak (olay no / istihbarat)", kind: "text", row: "kaynak" },
+      { id: "validUntil", label: "Geçerlilik süresi", kind: "date", row: "kaynak" },
+    ],
+  },
+  SWITCH_PORT: {
+    key: "SWITCH_PORT",
+    office: "NETWORK",
+    label: "Anahtar portu işlemi",
+    group: "Ağ segmentasyonu",
+    description: "Port açma / kapatma, VLAN değişikliği veya port güvenliği.",
+    slug: "anahtar-portu",
+    extraFields: [
+      { id: "switchDevice", label: "Anahtar (envanter)", kind: "select", required: true, row: "cihaz", options: [] },
+      { id: "portName", label: "Port", kind: "text", required: true, row: "cihaz", placeholder: "Gi1/0/12" },
+      { id: "actionKind", label: "İşlem", kind: "select", required: true, row: "islem", options: [
+        { value: "ENABLE", label: "Portu aç" },
+        { value: "DISABLE", label: "Portu kapat" },
+        { value: "VLAN", label: "VLAN değiştir" },
+        { value: "PORT_SECURITY", label: "Port güvenliği" },
+      ] },
+      { id: "vlanId", label: "VLAN", kind: "text", row: "islem" },
+      { id: "locationNote", label: "Bina / kat / oda", kind: "text" },
+    ],
+  },
+  WAN_LINK: {
+    key: "WAN_LINK",
+    office: "NETWORK",
+    label: "Hat / bağlantı talebi",
+    group: "Hat ve bağlantı",
+    description: "Yeni internet veya kurumlar arası hat, bant genişliği değişikliği ya da yedek hat.",
+    slug: "hat-baglanti",
+    extraFields: [
+      { id: "linkKind", label: "Hat türü", kind: "select", required: true, row: "hat", options: [
+        { value: "INTERNET", label: "İnternet hattı" },
+        { value: "METRO", label: "Metro / kurumlar arası hat" },
+        { value: "BACKUP", label: "Yedek hat" },
+        { value: "CHANGE", label: "Bant genişliği değişikliği" },
+      ] },
+      { id: "bandwidth", label: "Bant genişliği", kind: "text", row: "hat", placeholder: "100 Mbps" },
+      { id: "siteLocation", label: "Lokasyon / adres", kind: "text", required: true, row: "yer" },
+      { id: "provider", label: "Servis sağlayıcı", kind: "text", row: "yer" },
+      { id: "needDate", label: "İhtiyaç tarihi", kind: "date" },
+    ],
+  },
+  STORAGE_EXPAND: {
+    key: "STORAGE_EXPAND",
+    office: "SISTEM",
+    label: "Disk / depolama genişletme",
+    group: "Depolama",
+    description: "Sunucu diski veya depolama biriminde kapasite artırımı.",
+    slug: "depolama-genisletme",
+    extraFields: [
+      { id: "hostName", label: "Sunucu adı", kind: "text", required: true, row: "hedef" },
+      { id: "hostIp", label: "Sunucu IP", kind: "text", row: "hedef" },
+      { id: "volumeName", label: "Disk / birim", kind: "text", row: "kapasite", placeholder: "D:\\ veya /data" },
+      { id: "currentSize", label: "Mevcut boyut", kind: "text", row: "kapasite" },
+      { id: "requestedSize", label: "İstenen boyut", kind: "text", required: true, row: "kapasite" },
+      { id: "growthReason", label: "Gerekçe / büyüme tahmini", kind: "textarea", fullWidth: true },
+    ],
+  },
+  SCHEDULED_JOB: {
+    key: "SCHEDULED_JOB",
+    office: "SISTEM",
+    label: "Zamanlanmış görev / betik",
+    group: "Zamanlanmış görev",
+    description: "Sunucuda periyodik çalışacak görev veya betik tanımı.",
+    slug: "zamanlanmis-gorev",
+    extraFields: [
+      { id: "hostName", label: "Sunucu adı", kind: "text", required: true, row: "hedef" },
+      { id: "jobName", label: "Görev adı", kind: "text", required: true, row: "hedef" },
+      { id: "schedule", label: "Zamanlama", kind: "text", row: "calisma", placeholder: "Her gün 02:00" },
+      { id: "runAs", label: "Çalışacağı hesap", kind: "text", row: "calisma" },
+      { id: "scriptRef", label: "Komut / betik yolu", kind: "textarea", fullWidth: true },
+    ],
+  },
+  DOMAIN_PUBLISH: {
+    key: "DOMAIN_PUBLISH",
+    office: "YAZILIM",
+    label: "Uygulama yayın adresi (FQDN)",
+    group: "Yayın ve erişim",
+    description: "Uygulama için alan adı, sertifika ve dış erişim yayını.",
+    slug: "yayin-adresi",
+    extraFields: [
+      { id: "fqdn", label: "Alan adı (FQDN)", kind: "text", required: true, row: "adres", placeholder: "evrak.kurum.gov.tr" },
+      { id: "targetIp", label: "Hedef IP / sunucu", kind: "text", row: "adres" },
+      { id: "exposure", label: "Erişim kapsamı", kind: "select", required: true, row: "kapsam", options: [
+        { value: "INTERNAL", label: "Yalnızca kurum içi" },
+        { value: "INTERNET", label: "İnternete açık" },
+      ] },
+      { id: "certNeeded", label: "Sertifika", kind: "select", row: "kapsam", options: [
+        { value: "NEW", label: "Yeni sertifika gerekli" },
+        { value: "EXISTING", label: "Mevcut sertifika kullanılacak" },
+      ] },
+      { id: "wafNeeded", label: "WAF koruması", kind: "select", row: "kapsam", options: [
+        { value: "YES", label: "Gerekli" },
+        { value: "NO", label: "Gerekmiyor" },
+      ] },
+    ],
+  },
+  LOG_ACCESS: {
+    key: "LOG_ACCESS",
+    office: "YAZILIM",
+    label: "Uygulama log erişimi",
+    group: "İzleme ve log",
+    description: "Uygulama veya sunucu loglarına okuma / canlı izleme erişimi.",
+    slug: "log-erisimi",
+    extraFields: [
+      { id: "appName", label: "Uygulama", kind: "text", required: true, row: "uygulama" },
+      { id: "environment", label: "Ortam", kind: "select", row: "uygulama", options: [
+        { value: "PROD", label: "Üretim" },
+        { value: "TEST", label: "Test" },
+        { value: "DEV", label: "Geliştirme" },
+      ] },
+      { id: "accessKind", label: "Erişim türü", kind: "select", required: true, row: "erisim", options: [
+        { value: "READ", label: "Log okuma" },
+        { value: "LIVE", label: "Canlı izleme" },
+      ] },
+      { id: "validUntil", label: "Geçerlilik süresi", kind: "date", row: "erisim" },
+    ],
+  },
+  DB_REPLICATION: {
+    key: "DB_REPLICATION",
+    office: "VERITABANI",
+    label: "Replikasyon / yüksek erişilebilirlik",
+    group: "Yüksek erişilebilirlik",
+    description: "Veritabanı replikasyonu kurma, failover testi veya felaket kurtarma geçişi.",
+    slug: "replikasyon",
+    extraFields: [
+      { id: "dbInstance", label: "Veritabanı / instance", kind: "text", required: true, row: "db" },
+      { id: "haKind", label: "İşlem", kind: "select", required: true, row: "db", options: [
+        { value: "SETUP", label: "Replikasyon kur" },
+        { value: "FAILOVER_TEST", label: "Failover testi" },
+        { value: "DR_SWITCH", label: "DR geçişi" },
+      ] },
+      { id: "targetServer", label: "Hedef sunucu", kind: "text", row: "hedef" },
+      { id: "plannedWindow", label: "Planlanan zaman", kind: "date", row: "hedef" },
+    ],
+  },
+  DB_MASKING: {
+    key: "DB_MASKING",
+    office: "VERITABANI",
+    label: "Veri maskeleme / anonimleştirme",
+    group: "Veri güvenliği",
+    description: "Test veya raporlama ortamı için kişisel veri alanlarının maskelenmesi.",
+    slug: "veri-maskeleme",
+    extraFields: [
+      { id: "dbInstance", label: "Veritabanı / şema", kind: "text", required: true, row: "db" },
+      { id: "maskKind", label: "Yöntem", kind: "select", row: "db", options: [
+        { value: "MASK", label: "Maskeleme" },
+        { value: "ANONYMIZE", label: "Anonimleştirme" },
+        { value: "ENCRYPT", label: "Şifreleme" },
+      ] },
+      { id: "columns", label: "Tablo / sütunlar", kind: "textarea", required: true, fullWidth: true },
+    ],
+  },
+  SD_PRINTER: {
+    key: "SD_PRINTER",
+    office: "SERVIS",
+    label: "Yazıcı / çok işlevli cihaz",
+    group: "Varlık hizmeti",
+    description: "Yazıcı kurulumu, sarf malzeme veya arıza bildirimi.",
+    slug: "yazici",
+    extraFields: [
+      { id: "printerKind", label: "Konu", kind: "select", required: true, row: "konu", options: [
+        { value: "SETUP", label: "Kurulum / sürücü" },
+        { value: "SUPPLY", label: "Sarf malzeme" },
+        { value: "FAULT", label: "Arıza" },
+      ] },
+      { id: "printerModel", label: "Cihaz adı / modeli", kind: "text", row: "konu" },
+      { id: "locationNote", label: "Bina / kat / oda", kind: "text" },
+    ],
+  },
+  SD_ONBOARD: {
+    key: "SD_ONBOARD",
+    office: "SERVIS",
+    label: "Yeni personel / ayrılan personel paketi",
+    group: "Personel süreçleri",
+    description: "Göreve başlayan veya ayrılan personel için hesap, donanım ve erişim paketi.",
+    slug: "personel-paketi",
+    extraFields: [
+      { id: "onboardKind", label: "Süreç", kind: "select", required: true, row: "kisi", options: [
+        { value: "JOIN", label: "Göreve başlıyor" },
+        { value: "LEAVE", label: "Ayrılıyor" },
+      ] },
+      { id: "personName", label: "Personel adı soyadı", kind: "text", required: true, row: "kisi" },
+      { id: "effectiveDate", label: "Tarih", kind: "date", row: "tarih" },
+      { id: "departmentName", label: "Birim", kind: "text", row: "tarih" },
+      { id: "items", label: "İstenen hesap / donanım / erişimler", kind: "textarea", fullWidth: true },
+    ],
+  },
 };
 
-export const REQUEST_TYPE_LIST = Object.values(REQUEST_TYPES);
+/** Tüm türler (eski kayıtlar için birleştirilenler dahil). */
+export const ALL_REQUEST_TYPES = Object.values(REQUEST_TYPES);
+
+/** Menü ve formlarda görünen güncel türler. */
+export const REQUEST_TYPE_LIST = ALL_REQUEST_TYPES.filter((item) => !item.legacy);
 
 export const SLUG_TO_REQUEST_TYPE = {
-  ...Object.fromEntries(REQUEST_TYPE_LIST.map((item) => [item.slug, item.key])),
+  ...Object.fromEntries(ALL_REQUEST_TYPES.map((item) => [item.slug, item.key])),
   nac: "NAC",
 } as Record<string, RequestTypeKey>;
 

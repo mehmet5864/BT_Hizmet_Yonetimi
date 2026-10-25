@@ -89,6 +89,7 @@ model Asset {
   appConfigs        AppConfig[]
   catalogServices   CatalogService[]
   itilProcesses     ItilProcessRecord[]
+  accessGrants      AccessGrant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -101,10 +102,35 @@ model Asset {
   @@index([supportEndDate])
 }
 
+/// KULLANILMIYOR (topoloji artık hizmet merkezli; bkz. ServiceAccessRule). Veri kaybı uyarısı vermemek için tablo tanımı korunur.
+model AccessGrant {
+  id String @id @default(cuid())
+
+  personId String
+  person   Person @relation("PersonAccessGrants", fields: [personId], references: [id], onDelete: Cascade)
+  assetId  String
+  asset    Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  /// READ | WRITE | ADMIN | RDP | SSH | CONSOLE | VPN | DB | API | PHYSICAL
+  accessType String  @default("READ")
+  note       String?
+  expiresAt  DateTime?
+  grantedBy  String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([personId, assetId, accessType])
+  @@index([assetId])
+}
+
 model AssetRelation {
   id String @id @default(cuid())
 
   relationType String @default("HOSTED_ON")
+  /// Bağlantı bilgisi (topoloji): hedef port(lar), örn. "1433" veya "443,8443"; protokol TCP | UDP | HTTP | HTTPS | SSH | RDP | SQL …
+  port     String?
+  protocol String?
+  note     String?
 
   sourceId String
   source   Asset  @relation("RelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
@@ -159,6 +185,7 @@ model Person {
   managedParentDepartments Department[] @relation("ParentDeptManager")
 
   assets Asset[] @relation("AssetOwner")
+  accessGrants AccessGrant[] @relation("PersonAccessGrants")
 
   requestedRequests      ServiceRequest[] @relation("RequestOwner")
   requestingMgrRequests  ServiceRequest[] @relation("RequestReqManager")
@@ -800,6 +827,9 @@ model CatalogService {
   assetId String?
   asset   Asset? @relation(fields: [assetId], references: [id])
   processes ItilProcessRecord[]
+  accessRules ServiceAccessRule[]
+  topologyLayouts TopologyLayout[]
+  topologyNotes   TopologyNote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -807,6 +837,26 @@ model CatalogService {
   @@index([status])
   @@index([audience])
   agileProducts AgileProduct[]
+}
+
+/// Hizmete kimin hangi port/protokolle eriştiği (topoloji). Örn. "Tüm istemciler" → HTTPS 443; "Administrator" → 443, 22, 3389.
+model ServiceAccessRule {
+  id String @id @default(cuid())
+
+  serviceId String
+  service   CatalogService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  /// Kullanıcı grubu adı (serbest metin): Tüm istemciler, Administrator, Yedekleme sunucusu, Tedarikçi …
+  audience String
+  /// CLIENT | ADMIN | PARTNER | OTHER
+  kind     String @default("CLIENT")
+  /// Port listesi: "443" veya "HTTPS 443, SSH 22, RDP 3389"
+  ports    String
+  note     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([serviceId])
 }
 
 /// ITIL 2.0 süreç kayıtları (tasarım, SLA, kullanılabilirlik, kapasite, süreklilik, doğrulama, sürüm, izleme, değerlendirme)
@@ -1192,4 +1242,44 @@ model WorkflowInstance {
 
   @@unique([entityType, entityId])
   @@index([status])
+}
+
+/// Topoloji ekranında elle yerleştirilen nesne konumu (hizmet başına).
+model TopologyLayout {
+  id        String @id @default(cuid())
+  serviceId String
+  service   CatalogService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  nodeKey   String
+  x         Float
+  y         Float
+  updatedAt DateTime @updatedAt
+
+  @@unique([serviceId, nodeKey])
+}
+
+/// Topolojide bir nesneye eklenen not / ek bilgi.
+model TopologyNote {
+  id        String @id @default(cuid())
+  serviceId String
+  service   CatalogService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  nodeKey   String
+  nodeLabel String
+  text      String
+  author    String?
+  createdAt DateTime @default(now())
+
+  @@index([serviceId, nodeKey])
+}
+
+/// Genel topoloji referansı: yüklenen resim veya PDF.
+model TopologyReference {
+  id         String @id @default(cuid())
+  title      String
+  url        String
+  fileName   String?
+  /// IMAGE | PDF
+  kind       String @default("IMAGE")
+  note       String?
+  uploadedBy String?
+  createdAt  DateTime @default(now())
 }

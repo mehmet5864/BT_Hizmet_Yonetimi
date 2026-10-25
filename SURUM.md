@@ -13,7 +13,12 @@
 - **Resimli Yönetici rehberi** (Kılavuzlar → Yönetici rehberi): e-posta (SMTP), Active Directory (servis hesabı, LDAPS, grup → rol), SIEM (CEF/Syslog, UDP/TCP/TLS), zafiyet tarayıcıları (Nessus, Tenable, Qualys, OpenVAS, Rapid7, genel REST; sınırlamalar ve API ile bulgu gönderme), onay ve iş akışları, API anahtarları, TLS, yedek; sorun giderme tabloları.
 - Resimler **şematik SVG çizimlerdir** (`public/guides/`, `scripts/generate-guide-images.mjs` ile üretilir); gerçek ekran görüntüsü değildir. Kılavuz bloklarına `img` türü eklendi.
 - Qualys isteğine zorunlu `X-Requested-With` başlığı eklendi.
-- Not: Docker derlemesi kullanıcıda doğrulanır; yeni dosyalar yalnızca tür taramasından geçirildi.
+- **Topoloji (Hizmet tasarımı → Topoloji, `/hizmetler/topoloji`)**: hizmet kataloğundan seçilen hizmetin topolojisi, Visio tarzı şekillerle: kullanıcı grupları → güvenlik duvarı → hizmetin çalıştığı sunucular (işletim sistemiyle) → hizmet → eriştiği sistemler (veritabanı vb.), oklarda port/protokol. Örn. "Tüm istemciler → HTTPS/443", "Administrator → HTTPS/443 · SSH/22 · RDP/3389". Kritiklik çerçeve rengi, açık zafiyet rozeti, tıklayınca bağlantı vurgusu, yakınlaştırma/kaydırma, SVG indirme.
+- **Yeni tablo `ServiceAccessRule`** (hizmet → kullanıcı grubu → portlar) ve `AssetRelation` tablosuna `port`, `protocol`, `note` alanları. Sayfanın altındaki "Erişim kuralları" ve "Bağlantılar ve portlar" bölümlerinden girilir; etkinlik günlüğüne yazılır. Envanter formundaki "çalıştığı sunucu" seçimi artık mevcut bağlantıların port bilgisini silmez.
+- Hizmet ve varlık seçimi **arama kutusuyla** yapılır (`/api/topoloji/ara`, en çok 15 sonuç); tüm liste önceden yüklenmez.
+- Önceki taslaktaki kişi/genel/varlık/konum görünümleri kaldırıldı. `AccessGrant` tablosu kullanılmıyor; `prisma db push` veri kaybı uyarısı vermesin diye tanımı şemada bırakıldı.
+- Topoloji yalnızca **Süper yönetici, Sistem yöneticisi ve Bilgi güvenliği yöneticisi** rollerine açıktır.
+- Not: Topoloji arayüzü bulutta çalıştırılıp görülemedi; Docker derlemesi ve ekran kullanıcıda doğrulanır.
 
 ## 1.0.0 — ilk kararlı yayın
 
@@ -297,3 +302,15 @@ Bu sürüm 4.x geliştirme hattının son hâlidir; sürüm numarası ilk resmi 
 - Ayarlar > Şubeler > Birim ekle listesinde her birimin yanında Sil düğmesi (deleteUnit): personeli, alt birimi veya envanteri olan birim silinmez, nedeni yazılır.
 - Ayarlar > Şubeler: birim Düzenle (ad, tür, üst birim, amir; hiyerarşi döngüsü ve çift ad engellenir) ve Sil (unit-row.tsx, updateUnit).
 - Temizlik: eski 1.3.0 geri yükleme betikleri (restore-1.3.0.*), üretilmiş tsconfig.tsbuildinfo ve geçici dosyalar kaldırıldı. `.ps1` dosyaları Windows `.bat` başlatıcılarının asıl kodudur, bu yüzden korunur.
+
+- Topoloji (hizmet seçilince otomatik): ağ yolu (kenar anahtar → güvenlik duvarı → omurga/yük dengeleyici/DMZ → sunucu → SAN/depolama) varlık ilişkilerinden bulunur; kullanıcı ağları olay/süreç kayıtlarından ve erişim kurallarından gelir; kesikli oklar tahmindir; oklarda port/protokol.
+- Topoloji: Hizmet masası talepleri (güvenlik duvarı FW_INTRANET/FW_INTERNET, WAF, yük dengeleyici) hizmete bağlı sunuculara göre okunur; kaynak IP + port/protokol kullanıcı ağı olarak, güvenlik duvarı/WAF/LB katman olarak çizilir. Hizmet seçimi açılır liste.
+- Topoloji: nesneler sürüklenip yerleştirilir (hizmet başına kaydedilir, "Düzeni sıfırla"), nesneye not eklenir; "Genel topoloji (referans)" bölümünden resim/PDF yüklenir (yeni tablolar: TopologyLayout, TopologyNote, TopologyReference).
+- Talep: 10 yeni tür (DNAT, SNAT, IPSEC-VPN, SSL-VPN, kural silme/kapatma, statik rota/BGP/OSPF, DHCP kapsamı, e-posta güvenliği istisnası, sızma testi, SFTP hesabı).
+- Talep: ürün/platform seçim alanları (güvenlik duvarı, WAF, yük dengeleyici, NAC, yedekleme, SIEM, VPN, AV, PAM, DB motoru vb.) yalnızca envanterde kayıtlı varlıklardan dolar; envanterde yoksa liste boş kalır ve alan zorunlu olmaz.
+- Talep: Ayarlar → Talep grupları: her talep türü için AD güvenlik grubu (örn. firewall_admins, Nac_admins, DC_admins). Grup üyeleri o türdeki talepleri görür/işler; onaylanan talep otomatik olarak grup üyelerinden en az işi olana atanır. Topoloji, talepte seçilen güvenlik duvarı/WAF/yük dengeleyici envanter kaydını çizer.
+- Talep: AD güvenlik grubu artık kategori bazında (örn. Güvenlik duvarı → fw_admins); kategorideki tüm türlere uygulanır. Mail relay (yeni/değişiklik/iptal) ve Sunucu (yeni/güncelleme/kaldırma) talepleri tek forma birleşti; eski türler menüden kalktı, eski kayıtlar açılır.
+- Görünüm: talep seçim ekranı kategori kartları + AD grubu rozeti + ikonlar; talep formunda başlık bandı; talep panosunda birim kartları renkli ve ikonlu.
+- Talep formlarından marka/ürün adları (Infoblox, VMware, Cisco vb.) kaldırıldı; alan adları, açıklamalar, ipucu metinleri ve seçenekler nötr.
+- Ayarlar → Talep grupları: AD grupları servis hesabıyla AD'den okunur (ve kişilerin girişte gelen gruplarıyla birleştirilir); kategori başına açılır listeden seçilir. Active Directory sekmesinden sayfaya bağlantı eklendi.
+- Talep: 13 yeni tür — Siber: web gateway/proxy erişimi, sandbox analizi, IOC engelleme; Network: anahtar portu, hat/bağlantı; Sistem: disk genişletme, zamanlanmış görev; Yazılım: yayın adresi (FQDN), log erişimi; Veritabanı: replikasyon/HA, veri maskeleme; Servis masası: yazıcı, yeni/ayrılan personel paketi.

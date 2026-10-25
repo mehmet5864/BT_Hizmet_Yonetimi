@@ -2,6 +2,7 @@ import { ACL_VERSION, defaultModuleGrants, migrateGrants, normalizeGrants, type 
 import { DEFAULT_AD_ROLE_MAPS, type AdRoleMap } from "@/lib/auth/rbac";
 import type { PersonnelRole } from "@/lib/itil/constants";
 import { defaultOfficeNames, mergeOfficeNames, type OfficeNames } from "@/lib/itil/office-names";
+import { defaultRequestGroups, mergeRequestGroups, type RequestGroupMap } from "@/lib/itil/request-groups";
 import { isPatternId, isThemeId, type PatternId, type ThemeId } from "@/lib/theme";
 
 export type SmtpSecure = "NONE" | "STARTTLS" | "SSL";
@@ -142,6 +143,8 @@ export type SystemSettings = {
   };
   officers: Officers;
   officeNames: OfficeNames;
+  /** Talep türü → AD güvenlik grubu */
+  requestGroups: RequestGroupMap;
 };
 
 export const OFFICER_DEFS = [
@@ -276,6 +279,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   },
   officers: emptyOfficers(),
   officeNames: defaultOfficeNames(),
+  requestGroups: defaultRequestGroups(),
 };
 
 function mergeSection<T extends object>(base: T, incoming: unknown): T {
@@ -316,6 +320,7 @@ export function parseSettings(payload: string | null | undefined): SystemSetting
       },
       officers: mergeOfficers(raw.officers),
       officeNames: mergeOfficeNames(raw.officeNames),
+      requestGroups: mergeRequestGroups(raw.requestGroups),
     };
   } catch {
     return structuredClone(DEFAULT_SETTINGS);
@@ -365,6 +370,7 @@ export function publicSettings(settings: SystemSettings): SystemSettings {
     acl: settings.acl,
     officers: settings.officers,
     officeNames: settings.officeNames,
+    requestGroups: settings.requestGroups,
   };
 }
 

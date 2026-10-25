@@ -1,3 +1,4 @@
+import { inventoryDisplayValues } from "@/lib/itil/inventory-options";
 import { WorkflowProgress } from "@/components/workflow/progress";
 import { notFound, redirect } from "next/navigation";
 
@@ -57,6 +58,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
   }
   const typeDef = getRequestType(request.requestType);
   const extras = parseJsonRecord(request.details);
+  const invValues = typeDef ? await inventoryDisplayValues(typeDef.extraFields, extras) : {};
   const canResolve = canProcessRequest(viewer, request);
   const canEdit = canEditRequest(viewer, request);
   const managedOffices = await officesManagedBy(viewer.id);
@@ -164,7 +166,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
             <dl className="grid gap-x-8 sm:grid-cols-2">
               {typeDef.extraFields.map((field) => (
                 <DetailRow key={field.id} label={field.label}>
-                  {extras[field.id] ?? "—"}
+                  {invValues[field.id] ?? extras[field.id] ?? "—"}
                 </DetailRow>
               ))}
             </dl>

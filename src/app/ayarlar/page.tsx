@@ -66,6 +66,9 @@ export default async function SettingsPage({ searchParams }: PageProps<"/ayarlar
               <Link href="/ayarlar/is-akislari">İş akışları</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
+              <Link href="/ayarlar/talep-gruplari">Talep grupları</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
               <Link href="/ayarlar/guvenlik">Güvenlik</Link>
             </Button>
             <Button asChild variant="outline" size="sm">

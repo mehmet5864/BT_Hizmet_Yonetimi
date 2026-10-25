@@ -434,7 +434,8 @@ export function SettingsForms({
           <CardHeader>
             <CardTitle className="text-base">Active Directory entegrasyonu</CardTitle>
             <CardDescription>
-              Kullanıcı ve grup eşlemesi için LDAP / LDAPS bağlantısı. Şifre yalnızca değiştirdiğinizde güncellenir.
+              Kullanıcı ve grup eşlemesi için LDAP / LDAPS bağlantısı. Şifre yalnızca değiştirdiğinizde güncellenir. Bağlantı çalışınca AD güvenlik gruplarını talep kategorileriyle eşleştirmek için{" "}
+              <a href="/ayarlar/talep-gruplari" className="text-primary underline underline-offset-2">Talep grupları</a> sayfasını açın.
             </CardDescription>
           </CardHeader>
           <CardContent>

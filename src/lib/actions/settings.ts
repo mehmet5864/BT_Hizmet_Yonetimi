@@ -14,7 +14,8 @@ import { isPersonnelRole, type AdRoleMap } from "@/lib/auth/rbac";
 import { requireModule } from "@/lib/auth/viewer";
 import { isUnitType, UNIT_TYPE_LABELS } from "@/lib/itil/unit-types";
 import { defaultOfficeNames } from "@/lib/itil/office-names";
-import { REQUEST_OFFICE_LABELS, REQUEST_OFFICES } from "@/lib/itil/request-types";
+import { mergeRequestGroups } from "@/lib/itil/request-groups";
+import { ALL_REQUEST_TYPES, REQUEST_OFFICE_LABELS, REQUEST_OFFICES, slugifyRequestGroup } from "@/lib/itil/request-types";
 import {
   applySecret,
   isSiemLogFormat,
@@ -163,6 +164,27 @@ export async function saveOfficeNameSettings(_prev: ActionState, formData: FormD
   revalidatePath("/personel");
   revalidatePath("/", "layout");
   return saved(undefined, "Talep birimi isimleri kaydedildi.");
+}
+
+export async function saveRequestGroupSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const access = await requireModule("/ayarlar");
+  if (access.error) return access.error;
+  const current = await getSystemSettings();
+  const incoming: Record<string, string> = {};
+  for (const t of ALL_REQUEST_TYPES) {
+    const name = `cat_${t.office}__${slugifyRequestGroup(t.group)}`;
+    if (!formData.has(name)) continue;
+    const value = text(formData, name);
+    if (value && !/^[A-Za-z0-9_.\- ğüşöçıİĞÜŞÖÇ]+$/.test(value)) {
+      return { ok: false, message: `${t.group}: grup adında geçersiz karakter var.` };
+    }
+    incoming[t.key] = value.slice(0, 80);
+  }
+  current.requestGroups = mergeRequestGroups(incoming);
+  await saveSystemSettings(current);
+  revalidatePath("/ayarlar");
+  revalidatePath("/talepler");
+  return saved(undefined, "Talep türü – AD grubu eşlemesi kaydedildi.");
 }
 
 export async function saveApprovalSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {

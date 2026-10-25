@@ -1,6 +1,7 @@
-import { canAccessWithAcl, hasModuleLevel, officerGroupsFor, viewerGrantNames, type ModuleLevel } from "@/lib/auth/acl";
+import { canAccessWithAcl, hasModuleLevel, officerGroupsFor, parsePersonGroups, viewerGrantNames, type ModuleLevel } from "@/lib/auth/acl";
 import { isPersonnelRole, moduleForPath } from "@/lib/auth/rbac";
 import { getSession } from "@/lib/auth/session";
+import { handledTypesFor } from "@/lib/itil/request-groups";
 import { isRequestOffice, type RequestViewer } from "@/lib/itil/request-scope";
 import { unitPersonIds } from "@/lib/auth/unit-people";
 import { prisma } from "@/lib/prisma";
@@ -28,6 +29,7 @@ export async function getViewer(): Promise<RequestViewer | null> {
     requestOffice,
     departmentId,
     unitPersonIds: unitIds,
+    handledTypes: handledTypesFor(parsePersonGroups(person?.adGroups), settings.requestGroups),
     groups: [
       ...viewerGrantNames({
         role,

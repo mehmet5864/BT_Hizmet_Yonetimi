@@ -8,9 +8,10 @@ import { EmptyState, PageHeader } from "@/components/ui-bits";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TICKET_STATUS_LABELS, TICKET_STATUSES, type TicketStatus } from "@/lib/itil/constants";
+import { officeIcon, OFFICE_STYLE } from "@/components/itil/request-visual";
 import {
+  ALL_REQUEST_TYPES,
   REQUEST_OFFICES,
-  REQUEST_TYPE_LIST,
   getRequestType,
   slugifyRequestGroup,
 } from "@/lib/itil/request-types";
@@ -118,16 +119,23 @@ export function RequestDashboard({
         {visibleOffices.map((office) => {
           const count = data.byOffice[office] ?? 0;
           const ratio = data.total ? Math.round((count / data.total) * 100) : 0;
+          const style = OFFICE_STYLE[office];
+          const OfficeIcon = officeIcon(office);
           return (
             <Link key={office} href={`/talepler?ofis=${office}`} className="group block">
-              <Card className="office-tile h-full transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <Card className={cn("office-tile h-full border-l-4 transition-all hover:-translate-y-0.5 hover:shadow-lg", style.border)}>
                 <CardContent className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm font-medium">{officeLabel(office, officeNames)}</p>
+                    <div className="flex items-center gap-2.5">
+                      <span className={cn("flex size-9 items-center justify-center rounded-lg", style.icon)}>
+                        <OfficeIcon className="size-5" />
+                      </span>
+                      <p className="text-sm font-medium">{officeLabel(office, officeNames)}</p>
+                    </div>
                     <span className="text-2xl font-semibold tabular-nums">{count}</span>
                   </div>
                   <div className="bg-muted h-1.5 overflow-hidden rounded-full">
-                    <div className="widget-bar h-full rounded-full" style={{ width: `${ratio}%` }} />
+                    <div className={cn("h-full rounded-full", style.bar)} style={{ width: `${ratio}%` }} />
                   </div>
                   <p className="text-muted-foreground text-xs">Şube kuyruğunu aç</p>
                 </CardContent>
@@ -256,7 +264,7 @@ export function RequestDashboard({
               <CardTitle className="text-base">Sık açılan türler</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {REQUEST_TYPE_LIST
+              {ALL_REQUEST_TYPES
                 .map((item) => ({ item, count: data.byType[item.key] ?? 0 }))
                 .filter((row) => row.count > 0)
                 .sort((a, b) => b.count - a.count)

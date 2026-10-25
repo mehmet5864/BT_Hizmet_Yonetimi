@@ -153,12 +153,19 @@ function diffAsset(before: Record<string, unknown>, after: Record<string, unknow
 }
 
 async function syncHostServers(assetId: string, serverIds: string[]) {
-  await prisma.assetRelation.deleteMany({
+  // Mevcut bağlantıların port/protokol bilgisi korunur: yalnızca kaldırılanlar silinir, yeniler eklenir.
+  const existing = await prisma.assetRelation.findMany({
     where: { sourceId: assetId, relationType: "HOSTED_ON" },
+    select: { id: true, targetId: true },
   });
-  if (!serverIds.length) return;
+  const wanted = new Set(serverIds);
+  const stale = existing.filter((row) => !wanted.has(row.targetId)).map((row) => row.id);
+  if (stale.length) await prisma.assetRelation.deleteMany({ where: { id: { in: stale } } });
+  const have = new Set(existing.map((row) => row.targetId));
+  const fresh = serverIds.filter((id) => !have.has(id));
+  if (!fresh.length) return;
   await prisma.assetRelation.createMany({
-    data: serverIds.map((targetId) => ({ sourceId: assetId, targetId, relationType: "HOSTED_ON" })),
+    data: fresh.map((targetId) => ({ sourceId: assetId, targetId, relationType: "HOSTED_ON" })),
   });
 }
 

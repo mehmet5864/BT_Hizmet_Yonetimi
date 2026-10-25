@@ -59,6 +59,8 @@ export type RequestViewer = {
   requestOffice?: string | null;
   departmentId?: string | null;
   groups?: string[];
+  /** AD güvenlik grubu üyeliğiyle işleyicisi olduğu talep türleri (Ayarlar → Talep grupları). */
+  handledTypes?: string[];
   /** Kendisi + birim personeli (yalnızca birim amiri / sistem yöneticisi için doludur). */
   unitPersonIds?: string[];
 };
@@ -67,13 +69,18 @@ function ownRequesters(user: RequestViewer) {
   return user.unitPersonIds?.length ? user.unitPersonIds : [user.id];
 }
 
+function handledTypeWhere(user: RequestViewer) {
+  return user.handledTypes?.length ? [{ requestType: { in: user.handledTypes } }] : [];
+}
+
 export function visibleRequestWhere(user: RequestViewer) {
   const offices = handlerOffices(user);
   if (offices === "ALL") return {};
   const own = { requesterId: { in: ownRequesters(user) } };
-  if (!offices.length) return own;
+  const byGroup = handledTypeWhere(user);
+  if (!offices.length) return byGroup.length ? { OR: [own, ...byGroup] } : own;
 
-  const inbox: Record<string, unknown>[] = [];
+  const inbox: Record<string, unknown>[] = [...byGroup];
   for (const office of offices) {
     if (office === "SERVIS") {
       inbox.push({
@@ -95,9 +102,11 @@ export function canViewRequest(
     office: string;
     originalOffice?: string | null;
     escalatedOffice?: string | null;
+    requestType?: string | null;
   },
 ) {
   if (ownRequesters(user).includes(request.requesterId)) return true;
+  if (request.requestType && user.handledTypes?.includes(request.requestType)) return true;
   const scope = handlerOffices(user);
   if (scope === "ALL") return true;
   if (canViewOffice(scope, request.office)) {
@@ -112,8 +121,9 @@ export function canViewRequest(
 /** Gelen kuyrukta işlem / durum / yükseltme. */
 export function canProcessRequest(
   user: RequestViewer,
-  request: { office: string; escalatedOffice?: string | null },
+  request: { office: string; escalatedOffice?: string | null; requestType?: string | null },
 ) {
+  if (request.requestType && user.handledTypes?.includes(request.requestType)) return true;
   const scope = handlerOffices(user);
   if (scope === "ALL") return true;
   if (request.office === "SERVIS" && request.escalatedOffice && request.escalatedOffice !== "SERVIS") {
@@ -135,6 +145,7 @@ export function canEditRequest(
     office: string;
     status: string;
     escalatedOffice?: string | null;
+    requestType?: string | null;
   },
 ) {
   if (canProcessRequest(user, request)) return true;
@@ -174,7 +185,8 @@ export function listRequestWhere(
     });
   }
   const inbox = handlerOffices(user);
-  const own = { requesterId: { in: ownRequesters(user) } };
+  const handled = handledTypeWhere(user);
+  const own = handled.length ? { OR: [{ requesterId: { in: ownRequesters(user) } }, ...handled] } : { requesterId: { in: ownRequesters(user) } };
 
   if (filters.office && canViewOffice(inbox, filters.office)) {
     return {

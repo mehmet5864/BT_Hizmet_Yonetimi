@@ -1,3 +1,4 @@
+import { withInventoryOptions } from "@/lib/itil/inventory-options";
 import { notFound, redirect } from "next/navigation";
 
 import { SimpleForm } from "@/components/itil/simple-form";
@@ -37,7 +38,7 @@ export default async function EditRequestPage({ params }: { params: Promise<{ id
       <PageHeader title={t("pages.editShort", { name: request.requestNo })} description={tx(t, `requestTypes.${request.requestType}`, typeDef.label)} />
       <SimpleForm
         action={saveRequest}
-        fields={[...requestCommonFields({ canProcess }), ...typeDef.extraFields]}
+        fields={[...requestCommonFields({ canProcess }), ...(await withInventoryOptions(typeDef.extraFields))]}
         catalog={catalog}
         hidden={{
           id: request.id,

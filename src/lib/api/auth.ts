@@ -1,6 +1,7 @@
-import { viewerGrantNames } from "@/lib/auth/acl";
+import { parsePersonGroups, viewerGrantNames } from "@/lib/auth/acl";
 import { getViewerAcl } from "@/lib/auth/viewer";
 import { isPersonnelRole } from "@/lib/auth/rbac";
+import { handledTypesFor } from "@/lib/itil/request-groups";
 import { isRequestOffice, type RequestViewer } from "@/lib/itil/request-scope";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/security/http";
@@ -40,11 +41,13 @@ async function viewerFromPersonId(id: string): Promise<RequestViewer | null> {
   if (!person) return null;
   const role = isPersonnelRole(person.role) ? person.role : "USER";
   const requestOffice = isRequestOffice(person.requestOffice) ? person.requestOffice : null;
+  const settings = await getSystemSettings();
   return {
     id: person.id,
     role,
     requestOffice,
     departmentId: person.departmentId,
+    handledTypes: handledTypesFor(parsePersonGroups(person.adGroups), settings.requestGroups),
     groups: viewerGrantNames({ role, requestOffice, adGroups: person.adGroups }),
   };
 }

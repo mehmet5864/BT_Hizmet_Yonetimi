@@ -179,6 +179,30 @@ const screens = [
 ];
 screens.forEach(screen);
 
+
+/* Topoloji ekranı (özel çizim) */
+(function topoScreen() {
+  let b = shell("Süreç akışları", "Topoloji (Hizmet tasarımı)", []);
+  b += rect(172, 90, 710, 40, "#fff", "#cbd5e1", 8);
+  b += rect(184, 99, 330, 22, "#fff", "#cbd5e1", 5) + txt(194, 114, "Hizmet: Evrak Yönetim Sistemi", 11, "#334155");
+  b += rect(780, 99, 90, 22, "#2563eb", "none", 5) + txt(825, 114, "Topolojiyi çiz", 11, "#fff", 'text-anchor="middle"');
+  b += rect(172, 140, 520, 360, "#fff", "#cbd5e1", 8);
+  const node = (cx, cy, label, fill, sub) => rect(cx - 28, cy - 18, 56, 36, fill, "#334155", 6, 1.5) + txt(cx, cy + 32, label, 9.5, "#0f172a", 'text-anchor="middle"') + (sub ? txt(cx, cy + 43, sub, 8.5, "#64748b", 'text-anchor="middle"') : "");
+  const line = (x1, y1, x2, y2, c, label) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="2" marker-end="url(#ar)"/>` + (label ? rect((x1 + x2) / 2 - 28, (y1 + y2) / 2 - 17, 56, 13, "#fff", c, 4, 0.8) + txt((x1 + x2) / 2, (y1 + y2) / 2 - 7, label, 8.5, c, 'text-anchor="middle"') : "");
+  b += node(222, 250, "Tüm istemciler", "#dcfce7") + node(222, 400, "Administrator", "#fee2e2");
+  b += node(330, 325, "Güvenlik duvarı", "#fee2e2");
+  b += node(450, 250, "Sunucu 1", "#dbeafe", "Windows Server") + node(450, 400, "Sunucu 2", "#dbeafe", "Ubuntu");
+  b += node(580, 325, "Evrak Yönetim", "#fef9c3");
+  b += node(650, 215, "Veritabanı", "#ede9fe");
+  b += line(252, 250, 300, 320, "#16a34a", "HTTPS/443") + line(252, 400, 300, 332, "#dc2626", "443·22·3389") + line(360, 320, 420, 255, "#16a34a", "443") + line(360, 332, 420, 395, "#dc2626", "22·3389");
+  b += line(550, 320, 480, 262, "#0f766e", "çalışır") + line(550, 335, 480, 392, "#0f766e", "çalışır") + line(590, 305, 640, 235, "#7c3aed", "TCP/1433");
+  b += rect(704, 140, 178, 360, "#fff", "#cbd5e1", 8) + txt(716, 162, "Seçili nesne", 12, "#0f172a", 'font-weight="700"');
+  [0, 1, 2, 3, 4].forEach((i) => (b += rect(716, 176 + i * 22, 100 + ((i * 37) % 50), 7, "#e2e8f0", "none", 3)));
+  b += rect(716, 440, 150, 26, "#fff", "#94a3b8", 6) + txt(791, 457, "Bağlantıları düzenle", 11, "#334155", 'text-anchor="middle"');
+  b += badge(172, 90, 1) + badge(172, 138, 2) + badge(420, 138, 3) + badge(704, 138, 4);
+  save("ekran-topoloji", 900, 540, b);
+})();
+
 /* Yönetici: ayar ekranı şemaları */
 screen({ file: "yonetim-ad", menu: "Ayarlar", title: "Ayarlar › Active Directory", kind: "form", buttons: [], tabs: ["Tanımlar", "Active Directory", "SIEM", "Zafiyet tarama", "Yönetici onayları", "E-posta"], activeTab: "Active Directory", fields: ["☐ AD entegrasyonunu aç", "☐ LDAPS kullan", "Sunucu / domain", "Port", "Base DN", "Bind DN / kullanıcı", "Bind parolası", "Kullanıcı filtresi", "Grup filtresi"], marks: [0, 2, 4, 5], test: "Bağlantıyı dene" });
 screen({ file: "yonetim-siem", menu: "Ayarlar", title: "Ayarlar › SIEM", kind: "form", buttons: [], tabs: ["Tanımlar", "Active Directory", "SIEM", "Zafiyet tarama", "Yönetici onayları", "E-posta"], activeTab: "SIEM", fields: ["☐ SIEM gönderimini aç", "SIEM adresi", "Port", "Protokol (UDP / TCP / TLS)", "Log formatı (CEF / Syslog)", "CEF Device Vendor", "CEF Device Product", "Syslog facility"], marks: [0, 2, 3, 4], test: "Test kaydı gönder" });

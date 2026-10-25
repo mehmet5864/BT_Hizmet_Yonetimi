@@ -14,6 +14,7 @@ import {
   Gauge,
   Layers,
   LifeBuoy,
+  Network,
   ShieldAlert,
   Workflow,
   Wrench,
@@ -55,6 +56,7 @@ export function ItilProcessNav({
   canOps,
   canInventory = false,
   inventoryAdmin = false,
+  canTopology = false,
 }: {
   onNavigate?: () => void;
   canCatalog: boolean;
@@ -62,6 +64,7 @@ export function ItilProcessNav({
   canOps: (href: string) => boolean;
   canInventory?: boolean;
   inventoryAdmin?: boolean;
+  canTopology?: boolean;
 }) {
   const pathname = usePathname();
   const t = useT();
@@ -99,11 +102,16 @@ export function ItilProcessNav({
               {t("nav.catalog")}
             </Link>
           ) : null}
-          {canProcess ? (
+          {canProcess || canTopology ? (
             <NavGroup title={t("nav.design")}>
-              {tasarim.map((item) => (
-                <ProcessLink key={item.key} href={item.href} label={t(`itil.${item.key}.label`)} active={pathname.startsWith(item.href)} onNavigate={onNavigate} icon={PROCESS_ICON[item.key]} />
-              ))}
+              {canProcess
+                ? tasarim.map((item) => (
+                    <ProcessLink key={item.key} href={item.href} label={t(`itil.${item.key}.label`)} active={pathname.startsWith(item.href)} onNavigate={onNavigate} icon={PROCESS_ICON[item.key]} />
+                  ))
+                : null}
+              {canTopology ? (
+                <ProcessLink href="/hizmetler/topoloji" label="Topoloji" active={pathname.startsWith("/hizmetler/topoloji")} onNavigate={onNavigate} icon={Network} />
+              ) : null}
             </NavGroup>
           ) : null}
           <NavGroup title={t("nav.operations")}>

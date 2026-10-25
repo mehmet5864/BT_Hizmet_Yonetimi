@@ -1,5 +1,7 @@
 import { mailAssignment } from "@/lib/workflow/notify";
+import { parsePersonGroups } from "@/lib/auth/acl";
 import { prisma } from "@/lib/prisma";
+import { getSystemSettings } from "@/lib/settings-store";
 
 export type AssignResult = { assigneeId: string | null; assigneeName: string | null };
 
@@ -12,7 +14,7 @@ const OPEN_STATUSES = ["OPEN", "IN_PROGRESS", "WAITING"];
 export async function assignRequestToUnit(requestId: string): Promise<AssignResult> {
   const row = await prisma.serviceRequest.findUnique({
     where: { id: requestId },
-    select: { id: true, requestNo: true, requesterId: true, handlingDeptId: true, handlingManagerId: true, assigneeId: true },
+    select: { id: true, requestNo: true, requestType: true, requesterId: true, handlingDeptId: true, handlingManagerId: true, assigneeId: true },
   });
   if (!row) return { assigneeId: null, assigneeName: null };
   if (row.assigneeId) {
@@ -21,15 +23,34 @@ export async function assignRequestToUnit(requestId: string): Promise<AssignResu
   }
 
   let chosen: { id: string; fullName: string } | null = null;
-  if (row.handlingDeptId) {
-    const members = await prisma.person.findMany({
-      where: {
-        departmentId: row.handlingDeptId,
-        id: { notIn: [row.requesterId, ...(row.handlingManagerId ? [row.handlingManagerId] : [])] },
-      },
-      select: { id: true, fullName: true },
+
+  // Talep türünün AD güvenlik grubu (Ayarlar → Talep grupları) tanımlıysa önce o grubun üyeleri aranır.
+  const settings = await getSystemSettings();
+  const group = (settings.requestGroups[row.requestType] ?? "").trim().toLocaleLowerCase("tr");
+  let groupMembers: { id: string; fullName: string }[] = [];
+  if (group) {
+    const candidates = await prisma.person.findMany({
+      where: { adGroups: { contains: group, mode: "insensitive" }, id: { not: row.requesterId } },
+      select: { id: true, fullName: true, adGroups: true },
       take: 500,
     });
+    groupMembers = candidates
+      .filter((p) => parsePersonGroups(p.adGroups).some((g) => g.trim().toLocaleLowerCase("tr") === group))
+      .map((p) => ({ id: p.id, fullName: p.fullName }));
+  }
+
+  if (row.handlingDeptId || groupMembers.length) {
+    const deptMembers = groupMembers.length
+      ? []
+      : await prisma.person.findMany({
+          where: {
+            departmentId: row.handlingDeptId ?? undefined,
+            id: { notIn: [row.requesterId, ...(row.handlingManagerId ? [row.handlingManagerId] : [])] },
+          },
+          select: { id: true, fullName: true },
+          take: 500,
+        });
+    const members = groupMembers.length ? groupMembers : deptMembers;
     if (members.length) {
       const counts = await prisma.serviceRequest.groupBy({
         by: ["assigneeId"],
@@ -53,7 +74,7 @@ export async function assignRequestToUnit(requestId: string): Promise<AssignResu
       entityType: "ServiceRequest",
       entityId: requestId,
       action: "ASSIGN",
-      note: `${row.requestNo} gerçekleştirecek birimde ${chosen.fullName} kişisine atandı.`,
+      note: `${row.requestNo} ${groupMembers.length ? `AD grubu (${settings.requestGroups[row.requestType]}) üyesi` : "gerçekleştirecek birimde"} ${chosen.fullName} kişisine atandı.`,
     },
   });
   await mailAssignment({ requestId, assigneeId: chosen.id, managerId: row.handlingManagerId }).catch(() => null);

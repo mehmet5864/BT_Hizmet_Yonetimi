@@ -32,6 +32,7 @@ import { OfficeNamesProvider } from "@/components/office-names-provider";
 import type { InboxSnapshot } from "@/lib/inbox";
 import { RequestNav } from "@/components/request-nav";
 import { ItilProcessNav } from "@/components/itil-process-nav";
+import { canUseTopology } from "@/lib/topology/access";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -165,6 +166,7 @@ function NavContent({
               canOps={visible}
               canInventory={visible("/envanter")}
               inventoryAdmin={inventoryAdmin}
+              canTopology={canUseTopology(role) && visible("/hizmetler")}
             />
           ) : (
             NAV_AFTER.filter((item) => visible(item.href)).map((item) => (

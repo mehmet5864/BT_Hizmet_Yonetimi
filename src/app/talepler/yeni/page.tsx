@@ -1,3 +1,4 @@
+import { withInventoryOptions } from "@/lib/itil/inventory-options";
 import Link from "next/link";
 
 import { SimpleForm } from "@/components/itil/simple-form";
@@ -20,7 +21,10 @@ import {
   getRequestType,
   type RequestOffice,
 } from "@/lib/itil/request-types";
-import { getOfficeNames } from "@/lib/settings-store";
+import { getOfficeNames, getSystemSettings } from "@/lib/settings-store";
+import { categoryIcon, officeIcon, OFFICE_STYLE } from "@/components/itil/request-visual";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +42,7 @@ export default async function NewRequestPage({
     : undefined;
   const typeDef = key ? getRequestType(key) : undefined;
 
-  const [{ t }, officeNames] = await Promise.all([getTranslator(), getOfficeNames()]);
+  const [{ t }, officeNames, settings] = await Promise.all([getTranslator(), getOfficeNames(), getSystemSettings()]);
   if (!typeDef || !key) {
     const offices = officeFilter && REQUEST_OFFICES.includes(officeFilter)
       ? [officeFilter]
@@ -61,20 +65,59 @@ export default async function NewRequestPage({
         {offices.map((office) => {
           const items = types.filter((item) => item.office === office);
           if (!items.length) return null;
+          const style = OFFICE_STYLE[office];
+          const OfficeIcon = officeIcon(office);
+          const groups: { label: string; items: typeof items }[] = [];
+          for (const item of items) {
+            const found = groups.find((g) => g.label === item.group);
+            if (found) found.items.push(item);
+            else groups.push({ label: item.group, items: [item] });
+          }
           return (
-            <section key={office} className="space-y-2">
-              <h2 className="text-sm font-semibold">{officeLabel(office, officeNames)}</h2>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {items.map((item) => (
-                  <Link key={item.key} href={`/talepler/yeni?tur=${item.slug}`}>
-                    <Card className="h-full transition-colors hover:border-primary/40">
-                      <CardContent className="py-4">
-                        <p className="text-muted-foreground text-xs">{tx(t, `requestGroups.${item.group}`, item.group)}</p>
-                        <p className="font-medium">{tx(t, `requestTypes.${item.key}`, item.label)}</p>
+            <section key={office} className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className={cn("flex size-9 items-center justify-center rounded-lg", style.icon)}>
+                  <OfficeIcon className="size-5" />
+                </span>
+                <div>
+                  <h2 className="text-base font-semibold">{officeLabel(office, officeNames)}</h2>
+                  <p className="text-muted-foreground text-xs">{items.length} talep türü · {groups.length} kategori</p>
+                </div>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {groups.map((g) => {
+                  const Icon = categoryIcon(g.label, office);
+                  const adGroup = settings.requestGroups[g.items[0].key];
+                  return (
+                    <Card key={g.label} className={cn("border-l-4", style.border)}>
+                      <CardContent className="space-y-3 py-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Icon className="text-muted-foreground size-4" />
+                            <p className="text-sm font-semibold">{tx(t, `requestGroups.${g.label}`, g.label)}</p>
+                          </div>
+                          {adGroup ? (
+                            <Badge variant="secondary" className="font-mono text-[11px]" title="Bu kategorideki talepleri karşılayan AD güvenlik grubu">
+                              {adGroup}
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {g.items.map((item) => (
+                            <Link
+                              key={item.key}
+                              href={`/talepler/yeni?tur=${item.slug}`}
+                              className={cn("hover:border-primary/50 rounded-lg border p-3 transition-all hover:-translate-y-0.5 hover:shadow-sm", style.soft)}
+                            >
+                              <p className="text-sm font-medium">{tx(t, `requestTypes.${item.key}`, item.label)}</p>
+                              {item.description ? <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{item.description}</p> : null}
+                            </Link>
+                          ))}
+                        </div>
                       </CardContent>
                     </Card>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             </section>
           );
@@ -84,7 +127,7 @@ export default async function NewRequestPage({
   }
 
   const catalog = await getItilCatalog();
-  const extras = typeDef.extraFields.map((field) => ({ ...field, id: field.id }));
+  const extras = await withInventoryOptions(typeDef.extraFields.map((field) => ({ ...field, id: field.id })));
   const viewer = await getViewer();
   const canProcess = viewer ? canProcessRequest(viewer, { office: typeDef.office }) : false;
   const officeManagerId = await resolveOfficeApprover(typeDef.office, viewer?.id);
@@ -93,6 +136,28 @@ export default async function NewRequestPage({
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 sm:p-8">
       <PageHeader title={tx(t, `requestTypes.${key}`, typeDef.label)} description={officeLabel(typeDef.office, officeNames)} />
+      {(() => {
+        const style = OFFICE_STYLE[typeDef.office];
+        const Icon = categoryIcon(typeDef.group, typeDef.office);
+        const adGroup = settings.requestGroups[key];
+        return (
+          <div className={cn("flex flex-wrap items-center gap-4 rounded-xl border border-l-4 p-4", style.border, style.soft)}>
+            <span className={cn("flex size-12 items-center justify-center rounded-xl", style.icon)}>
+              <Icon className="size-6" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-muted-foreground text-xs">{officeLabel(typeDef.office, officeNames)} · {tx(t, `requestGroups.${typeDef.group}`, typeDef.group)}</p>
+              <p className="text-sm">{typeDef.description || typeDef.label}</p>
+            </div>
+            {adGroup ? (
+              <div className="text-right">
+                <p className="text-muted-foreground text-[11px]">Karşılayan grup</p>
+                <Badge variant="secondary" className="font-mono">{adGroup}</Badge>
+              </div>
+            ) : null}
+          </div>
+        );
+      })()}
       <SimpleForm
         action={saveRequest}
         fields={[...requestCommonFields({ canProcess }), ...extras]}
