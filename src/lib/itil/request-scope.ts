@@ -1,3 +1,4 @@
+import type { ModuleScope } from "@/lib/auth/acl";
 import type { PersonnelRole } from "@/lib/itil/constants";
 import { requestScopeFilter } from "@/lib/itil/escalation";
 import { REQUEST_OFFICES, type RequestOffice } from "@/lib/itil/request-types";
@@ -26,8 +27,15 @@ export function isRequesterOnly(role?: string | null) {
 export function handlerOffices(input: {
   role?: string | null;
   requestOffice?: string | null;
+  /** Yetki matrisinde Talep yönetimi için açık kapsam seçildiyse rol kuralı yerine o geçerlidir. */
+  requestScopes?: ModuleScope[] | null;
 }): RequestOffice[] | "ALL" {
-  if (input.role === "SUPER_ADMIN" || input.role === "SENIOR_MANAGER") return "ALL";
+  if (input.role === "SUPER_ADMIN") return "ALL";
+  if (input.requestScopes?.length) {
+    if (input.requestScopes.includes("ALL")) return "ALL";
+    return input.requestScopes.includes("OFFICE") && isRequestOffice(input.requestOffice) ? [input.requestOffice] : [];
+  }
+  if (input.role === "SENIOR_MANAGER") return "ALL";
   if (isRequesterOnly(input.role)) return [];
 
   const offices = new Set<RequestOffice>();
@@ -45,6 +53,7 @@ export function seesAllRequestOffices(role?: string | null) {
 export function scopedRequestOffices(input: {
   role?: string | null;
   requestOffice?: string | null;
+  requestScopes?: ModuleScope[] | null;
 }): RequestOffice[] | "ALL" {
   return handlerOffices(input);
 }
@@ -63,9 +72,12 @@ export type RequestViewer = {
   handledTypes?: string[];
   /** Kendisi + birim personeli (yalnızca birim amiri / sistem yöneticisi için doludur). */
   unitPersonIds?: string[];
+  /** Yetki matrisindeki Talep yönetimi kapsamı (yoksa rol kuralı). */
+  requestScopes?: ModuleScope[] | null;
 };
 
 function ownRequesters(user: RequestViewer) {
+  if (user.requestScopes?.length && !user.requestScopes.includes("UNIT")) return [user.id];
   return user.unitPersonIds?.length ? user.unitPersonIds : [user.id];
 }
 

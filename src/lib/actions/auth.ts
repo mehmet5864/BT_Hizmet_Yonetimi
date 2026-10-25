@@ -1,5 +1,6 @@
 "use server";
 
+import { syncPersonOrgFromDn } from "@/lib/auth/ad-org";
 import { licenseSeatError } from "@/lib/license";
 import { redirect } from "next/navigation";
 
@@ -344,10 +345,12 @@ export async function loginAd(_prev: ActionState, formData: FormData): Promise<A
 
   let groups = parseGroups(person?.adGroups);
   let adOk = false;
+  let adDn: string | undefined;
   if (settings.ad.enabled && settings.ad.host) {
     try {
       const bind = await bindActiveDirectory(settings.ad, username, password);
       adOk = bind.ok;
+      adDn = bind.dn;
       if (bind.groups.length) groups = bind.groups;
       if (!bind.ok) return { ok: false, message: bind.message };
     } catch {
@@ -376,6 +379,14 @@ export async function loginAd(_prev: ActionState, formData: FormData): Promise<A
       where: { id: person.id },
       data: { adGroups: JSON.stringify(groups) },
     });
+  }
+
+  if (settings.ad.ouSync && adDn) {
+    try {
+      await syncPersonOrgFromDn(person, adDn);
+    } catch {
+      /* OU eşlemesi girişi engellemez */
+    }
   }
 
   const session = await toSession({ ...person, adGroups: JSON.stringify(groups) });
@@ -437,10 +448,12 @@ export async function registerAd(_prev: ActionState, formData: FormData): Promis
   }
 
   let groups: string[] = [];
+  let adDn: string | undefined;
   try {
     const bind = await bindActiveDirectory(settings.ad, username, password);
     if (!bind.ok) return { ok: false, message: bind.message };
     groups = bind.groups;
+    adDn = bind.dn;
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "AD kaydı başarısız." };
   }
@@ -472,6 +485,13 @@ export async function registerAd(_prev: ActionState, formData: FormData): Promis
         },
       });
 
+  if (settings.ad.ouSync && adDn) {
+    try {
+      await syncPersonOrgFromDn(person, adDn);
+    } catch {
+      /* OU eşlemesi kaydı engellemez */
+    }
+  }
   await startSession(await toSession({ ...person, adGroups: JSON.stringify(groups) }));
   redirect("/");
 }

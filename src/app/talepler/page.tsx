@@ -47,6 +47,7 @@ export default async function RequestsPage({
   const scope = scopedRequestOffices({
     role: viewer?.role,
     requestOffice: viewer?.requestOffice,
+    requestScopes: viewer?.requestScopes,
   });
 
   const params = await searchParams;

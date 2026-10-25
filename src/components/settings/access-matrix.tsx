@@ -16,7 +16,10 @@ import {
   MODULE_SCOPE_HINTS,
   MODULE_SCOPE_LABELS,
   MODULE_SCOPES,
+  OFFICER_MODULE,
+  officerGrantName,
   recommendedRoleGrants,
+  SCOPED_MODULES,
   type ModuleGrant,
   type ModuleLevel,
   type ModuleScope,
@@ -35,11 +38,10 @@ const TONE: Record<Level, string> = {
   ADMIN: "bg-amber-500/20 text-amber-700 hover:bg-amber-500/30 dark:text-amber-300",
 };
 const SCOPE_SHORT: Record<ModuleScope, string> = { OWN: "Kendi", UNIT: "Alt çalışan", OFFICE: "Talep birimi", ALL: "Tümü" };
-/** Kayıt süzmesi uygulanan modüller; diğerlerinde kapsam anlamsız. */
-const SCOPED_MODULES = new Set<AppModule>([
-  "personel", "envanter", "degisiklik", "yama", "konfigurasyon", "zafiyet", "firma-sla", "olay", "problem", "cevik", "surec",
-]);
-const roleName = (role: string) => `role:${role}`;
+const OFFICER_COL = "OFFICER";
+const OFFICER_MODULES = new Set<string>(Object.values(OFFICER_MODULE));
+/** Sütun → yetki grubu adı: rol sütunu role:X, süreç yöneticisi sütunu officer:<modül>. */
+const groupOf = (mod: AppModule, col: string) => (col === OFFICER_COL ? officerGrantName(mod) : `role:${col}`);
 const same = (a: string, b: string) => a.trim().toLocaleLowerCase("tr-TR") === b.trim().toLocaleLowerCase("tr-TR");
 
 export function AccessMatrix({
@@ -63,16 +65,22 @@ export function AccessMatrix({
     else toast.error(state.message);
   }, [state.message, state.ok, state.stamp]);
 
-  const find = (mod: AppModule, role: string) => grants.find((g) => g.module === mod && same(g.group, roleName(role)));
-  const levelOf = (mod: AppModule, role: string): Level => find(mod, role)?.level ?? "NONE";
-  const scopesOf = (mod: AppModule, role: string): ModuleScope[] => find(mod, role)?.scopes ?? defaultScopes(role, mod);
+  const find = (mod: AppModule, col: string) => grants.find((g) => g.module === mod && same(g.group, groupOf(mod, col)));
+  const hasCell = (mod: AppModule, col: string) => col !== OFFICER_COL || OFFICER_MODULES.has(mod);
+  const levelOf = (mod: AppModule, col: string): Level =>
+    find(mod, col)?.level ?? (col === OFFICER_COL && hasCell(mod, col) ? "ADMIN" : "NONE");
+  const scopesOf = (mod: AppModule, col: string): ModuleScope[] =>
+    find(mod, col)?.scopes ?? (col === OFFICER_COL ? ["ALL"] : defaultScopes(col, mod));
 
   const write = (mod: AppModule, role: string, level: Level, scopes?: ModuleScope[]) =>
     setGrants((prev) => {
-      const old = prev.find((g) => g.module === mod && same(g.group, roleName(role)));
-      const rest = prev.filter((g) => !(g.module === mod && same(g.group, roleName(role))));
+      const group = groupOf(mod, role);
+      const old = prev.find((g) => g.module === mod && same(g.group, group));
+      const rest = prev.filter((g) => !(g.module === mod && same(g.group, group)));
+      // Süreç yöneticisi en az "Gör" düzeyindedir (kaydı olmayan hücre otomatik Yön sayılır).
+      if (level === "NONE" && role === OFFICER_COL) return prev;
       if (level === "NONE") return rest;
-      const next: ModuleGrant = { module: mod, group: roleName(role), level };
+      const next: ModuleGrant = { module: mod, group, level };
       const sc = scopes ?? old?.scopes;
       if (sc?.length) next.scopes = sc;
       return [...rest, next];
@@ -96,8 +104,10 @@ export function AccessMatrix({
     if (kind === "scope" && (MODULE_SCOPES as readonly string[]).includes(value)) toggleScope(mod, role, value as ModuleScope, true);
     setPicked(null);
   };
-  const cycle = (mod: AppModule, role: string) =>
-    applyLevel(mod, role, LEVELS[(LEVELS.indexOf(levelOf(mod, role)) + 1) % LEVELS.length]);
+  const cycle = (mod: AppModule, role: string) => {
+    const order = role === OFFICER_COL ? LEVELS.filter((l) => l !== "NONE") : LEVELS;
+    applyLevel(mod, role, order[(order.indexOf(levelOf(mod, role)) + 1) % order.length]);
+  };
 
   const chipCls = (key: string, tone: string) =>
     `inline-flex cursor-grab items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors ${picked === key ? "bg-primary text-primary-foreground" : tone}`;
@@ -186,7 +196,7 @@ export function AccessMatrix({
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] text-left text-xs">
+              <table className="w-full min-w-[920px] text-left text-xs">
                 <thead>
                   <tr className="border-b">
                     <th className="py-2 pe-3 font-medium">Modül</th>
@@ -195,13 +205,15 @@ export function AccessMatrix({
                         {PERSONNEL_ROLE_LABELS[role]}
                       </th>
                     ))}
+                    <th className="px-1 py-2 text-center font-medium">Süreç yöneticisi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ACL_MODULES.map((mod) => (
                     <tr key={mod} className="border-b align-top last:border-0">
                       <td className="py-1.5 pe-3 pt-2.5">{MODULE_LABELS[mod]}</td>
-                      {PERSONNEL_ROLES.map((role) => {
+                      {[...PERSONNEL_ROLES, OFFICER_COL].map((role) => {
+                        if (!hasCell(mod, role)) return <td key={role} className="text-muted-foreground/40 px-1 py-1 text-center">—</td>;
                         const locked = role === "SUPER_ADMIN";
                         const level: Level = locked ? "ADMIN" : levelOf(mod, role);
                         const scoped = SCOPED_MODULES.has(mod) && level !== "NONE";

@@ -1,4 +1,4 @@
-import { canAccessWithAcl, hasModuleLevel, officerGroupsFor, parsePersonGroups, viewerGrantNames, type ModuleLevel } from "@/lib/auth/acl";
+import { canAccessWithAcl, hasModuleLevel, officerGroupsFor, parsePersonGroups, scopesFor, viewerGrantNames, type ModuleLevel } from "@/lib/auth/acl";
 import { assignedGroupsFor } from "@/lib/auth/assigned";
 import { isPersonnelRole, moduleForPath } from "@/lib/auth/rbac";
 import { getSession } from "@/lib/auth/session";
@@ -34,6 +34,15 @@ export async function getViewer(): Promise<RequestViewer | null> {
     role === "UNIT_MANAGER" || role === "SYSTEM_ADMIN" || needsUnit
       ? await unitPersonIds({ id: user.id, departmentId })
       : [user.id];
+  const groups = [
+    ...viewerGrantNames({
+      role,
+      requestOffice,
+      adGroups: person?.adGroups,
+    }),
+    ...officerGroupsFor(user.id, settings.officers as Record<string, string>),
+    ...(role === "USER" ? await assignedGroupsFor(user.id) : []),
+  ];
   return {
     id: user.id,
     role,
@@ -41,15 +50,8 @@ export async function getViewer(): Promise<RequestViewer | null> {
     departmentId,
     unitPersonIds: unitIds,
     handledTypes: handledTypesFor(parsePersonGroups(person?.adGroups), settings.requestGroups),
-    groups: [
-      ...viewerGrantNames({
-        role,
-        requestOffice,
-        adGroups: person?.adGroups,
-      }),
-      ...officerGroupsFor(user.id, settings.officers as Record<string, string>),
-      ...(role === "USER" ? await assignedGroupsFor(user.id) : []),
-    ],
+    requestScopes: scopesFor(settings.acl.grants, groups, "talepler"),
+    groups,
   };
 }
 

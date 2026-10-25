@@ -9,6 +9,8 @@ export type AdBindResult = {
   ok: boolean;
   groups: string[];
   message: string;
+  /** Kullanıcı kaydının distinguishedName değeri (OU yolu için). */
+  dn?: string;
 };
 
 const SESSION_TIMEOUT_MS = 8000;
@@ -129,6 +131,13 @@ function entryGroups(message: LdapMessage): string[] {
   return groups;
 }
 
+function entryDn(message: LdapMessage): string | null {
+  const first = children(message.buf, message.body)[0];
+  if (!first) return null;
+  const dn = message.buf.subarray(first.start, first.end).toString("utf8").trim();
+  return dn && dn.length < 600 ? dn : null;
+}
+
 function resultCode(message: LdapMessage): number {
   const first = children(message.buf, message.body)[0];
   return first ? message.buf[first.start] : -1;
@@ -181,6 +190,7 @@ async function ldapSession(
     let done = false;
     let phase: "bind" | "search" = "bind";
     const groups = new Set<string>();
+    let userDn: string | undefined;
 
     const finish = (result: AdBindResult | Error) => {
       if (done) return;
@@ -216,9 +226,10 @@ async function ldapSession(
           socket.write(searchRequest(2, search.baseDn, search.sam));
         } else if (phase === "search" && message.op === 0x64) {
           for (const name of entryGroups(message)) groups.add(name);
+          userDn ??= entryDn(message) ?? undefined;
         } else if (phase === "search" && message.op === 0x65) {
           // Grup araması başarısız olsa da oturum açıldı sayılır (yetkiler varsayılan role düşer).
-          return finish({ ok: true, groups: [...groups], message: "Active Directory oturumu açıldı." });
+          return finish({ ok: true, groups: [...groups], message: "Active Directory oturumu açıldı.", dn: userDn });
         }
       }
     });

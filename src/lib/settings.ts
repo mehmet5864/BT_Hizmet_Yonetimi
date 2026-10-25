@@ -69,6 +69,8 @@ export type SystemSettings = {
     host: string;
     port: number;
     useLdaps: boolean;
+    /** Girişte kullanıcının OU yolundan birim ağacını kur ve kişiyi birime bağla (varsayılan kapalı). */
+    ouSync: boolean;
     baseDn: string;
     bindDn: string;
     bindPassword: string;
@@ -206,6 +208,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
     host: "",
     port: 389,
     useLdaps: false,
+    ouSync: false,
     baseDn: "",
     bindDn: "",
     bindPassword: "",

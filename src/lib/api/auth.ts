@@ -1,4 +1,4 @@
-import { parsePersonGroups, viewerGrantNames } from "@/lib/auth/acl";
+import { parsePersonGroups, scopesFor, viewerGrantNames } from "@/lib/auth/acl";
 import { getViewerAcl } from "@/lib/auth/viewer";
 import { isPersonnelRole } from "@/lib/auth/rbac";
 import { handledTypesFor } from "@/lib/itil/request-groups";
@@ -49,6 +49,7 @@ async function viewerFromPersonId(id: string): Promise<RequestViewer | null> {
     departmentId: person.departmentId,
     handledTypes: handledTypesFor(parsePersonGroups(person.adGroups), settings.requestGroups),
     groups: viewerGrantNames({ role, requestOffice, adGroups: person.adGroups }),
+    requestScopes: scopesFor(settings.acl.grants, viewerGrantNames({ role, requestOffice, adGroups: person.adGroups }), "talepler"),
   };
 }
 

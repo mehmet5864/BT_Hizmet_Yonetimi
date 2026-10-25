@@ -52,7 +52,7 @@ export async function AppChrome({ children }: { children: React.ReactNode }) {
 
   const [inbox, requestOffices, officeNames, settings] = await Promise.all([
     getInbox(),
-    Promise.resolve(scopedRequestOffices({ role: user.role, requestOffice: user.requestOffice })),
+    Promise.resolve(scopedRequestOffices({ role: user.role, requestOffice: user.requestOffice, requestScopes: viewer?.requestScopes })),
     getOfficeNames(),
     getSystemSettings(),
   ]);

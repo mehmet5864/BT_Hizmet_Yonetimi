@@ -59,6 +59,10 @@ export function isModuleScope(value: string): value is ModuleScope {
  */
 export function defaultScopes(role: string, mod: AppModule): ModuleScope[] {
   if (role === "SUPER_ADMIN") return ["ALL"];
+  if (mod === "talepler") {
+    if (role === "SENIOR_MANAGER") return ["ALL"];
+    return role === "USER" ? ["OWN"] : ["OWN", "UNIT", "OFFICE"];
+  }
   if (mod === "personel") {
     if (role === "UNIT_MANAGER" || role === "SENIOR_MANAGER") return ["OWN", "UNIT"];
     return ["OWN"];
@@ -70,6 +74,11 @@ export function defaultScopes(role: string, mod: AppModule): ModuleScope[] {
   return ["OWN"];
 }
 
+/** Kayıt süzmesi (kapsam) uygulanan modüller. Diğerlerinde kapsam anlamsızdır. */
+export const SCOPED_MODULES: ReadonlySet<AppModule> = new Set<AppModule>([
+  "personel", "envanter", "talepler", "degisiklik", "yama", "konfigurasyon", "zafiyet", "firma-sla", "olay", "problem", "cevik", "surec",
+]);
+
 /** Görüntüleyenin bu modüldeki açık kapsamları; hiçbir eşleşen yetkide kapsam yoksa null (eski kural). */
 export function scopesFor(grants: ModuleGrant[], names: string[], moduleName: AppModule): ModuleScope[] | null {
   const normalized = names.map((name) => name.trim().toLocaleLowerCase("tr-TR"));
@@ -79,6 +88,12 @@ export function scopesFor(grants: ModuleGrant[], names: string[], moduleName: Ap
     if (!normalized.includes(grant.group.trim().toLocaleLowerCase("tr-TR"))) continue;
     found ??= new Set();
     grant.scopes.forEach((scope) => found!.add(scope));
+  }
+  // Süreç yöneticisi: açık kapsam seçilmediyse modülün tüm kayıtlarını görür.
+  const officerName = officerGrantName(moduleName).toLocaleLowerCase("tr-TR");
+  if (normalized.includes(officerName) && !grants.some((g) => g.module === moduleName && g.group.toLocaleLowerCase("tr-TR") === officerName && g.scopes?.length)) {
+    found ??= new Set();
+    found.add("ALL");
   }
   return found ? [...found] : null;
 }
@@ -187,12 +202,6 @@ export function defaultModuleGrants(): ModuleGrant[] {
   // Düz kullanıcı ITIL süreçlerini yalnızca kendisine görev atandığında görür ("assigned:<modül>" grubu).
   for (const mod of ASSIGNABLE_MODULES) grants.push({ module: mod, group: assignedGrantName(mod), level: "HANDLE" });
   grants.push({ module: "envanter", group: "GG_Envanter", level: "ADMIN" });
-  grants.push({ module: "talepler", group: "office:SERVIS", level: "HANDLE" });
-  grants.push({ module: "talepler", group: "office:SISTEM", level: "HANDLE" });
-  grants.push({ module: "talepler", group: "office:NETWORK", level: "HANDLE" });
-  grants.push({ module: "talepler", group: "office:SIBER", level: "HANDLE" });
-  grants.push({ module: "talepler", group: "office:YAZILIM", level: "HANDLE" });
-  grants.push({ module: "talepler", group: "office:VERITABANI", level: "HANDLE" });
   return grants;
 }
 
@@ -243,8 +252,12 @@ export function moduleLevelFor(
   role?: string | null,
 ): ModuleLevel | "NONE" {
   if (role === "SUPER_ADMIN") return "ADMIN";
-  // Modülün atanmış süreç yöneticisi kendi modülünde otomatik "Modül yöneticisi" olur.
-  if (names.includes(officerGrantName(moduleName))) return "ADMIN";
+  // Modülün atanmış süreç yöneticisi kendi modülünde varsayılan olarak "Modül yöneticisi" olur;
+  // yetki matrisinde "Süreç yöneticisi" sütununda açık bir düzey seçilmişse o geçerlidir.
+  const officerName = officerGrantName(moduleName);
+  if (names.includes(officerName) && !grants.some((grant) => grant.module === moduleName && grant.group === officerName)) {
+    return "ADMIN";
+  }
   const normalized = names.map((name) => name.trim().toLocaleLowerCase("tr-TR"));
   let best: ModuleLevel | "NONE" = "NONE";
   for (const grant of grants) {

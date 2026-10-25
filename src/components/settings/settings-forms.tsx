@@ -226,6 +226,9 @@ export function SettingsForms({
                 <div className="sm:col-span-2">
                   <Flag name="useLdaps" label="LDAPS kullan" hint="636/TCP, sertifika ile şifreli bağlanır." defaultChecked={settings.ad.useLdaps} />
                 </div>
+                <div className="sm:col-span-2">
+                  <Flag name="ouSync" label="OU yolundan birimi otomatik kur" hint="Açıkken girişte kullanıcının OU yolu (örn. Genel Müdürlük → Siber Daire Başkanlığı → Şube Müdürlüğü) birim ağacına çevrilir ve kişi en alttaki birime bağlanır; talep birimi boşsa OU adından belirlenir. Hata olursa giriş etkilenmez. Varsayılan kapalıdır." defaultChecked={settings.ad.ouSync} />
+                </div>
                 <FieldShell id="ad-ufilter" label="Kullanıcı filtresi" className="sm:col-span-2" hint="LDAP kullanıcı arama filtresi. (%s) kullanıcı adıyla değişir.">
                   <Input id="ad-ufilter" name="userFilter" defaultValue={settings.ad.userFilter} />
                 </FieldShell>

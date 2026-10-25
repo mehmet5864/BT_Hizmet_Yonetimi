@@ -1303,6 +1303,8 @@ export const EN_PHRASES: Record<string, string> = {
   "Modül yetkileri kaydedildi.": "Module permissions saved.",
   "AD grup → rol eşlemesi kaydedildi.": "AD group → role mapping saved.",
   "Yetki matrisi": "Permission matrix",
+  "Süreç yöneticisi": "Process manager",
+  "OU yolundan birimi otomatik kur": "Build units automatically from OU path",
   "Modül yetkisi": "Module permission",
   "Modül yetkisi satırı": "Module permission rows",
   "AD grubu → rol": "AD group → role",

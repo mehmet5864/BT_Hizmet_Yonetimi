@@ -64,6 +64,7 @@ export async function saveAdSettings(_prev: ActionState, formData: FormData): Pr
     host,
     port: num(formData, "port", current.ad.useLdaps || flag(formData, "useLdaps") ? 636 : 389),
     useLdaps: flag(formData, "useLdaps"),
+    ouSync: flag(formData, "ouSync"),
     baseDn: text(formData, "baseDn"),
     bindDn: text(formData, "bindDn"),
     bindPassword: applySecret(text(formData, "bindPassword"), current.ad.bindPassword),
