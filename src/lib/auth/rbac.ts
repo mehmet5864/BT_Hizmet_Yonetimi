@@ -27,7 +27,6 @@ export const DEFAULT_AD_ROLE_MAPS: AdRoleMap[] = [
   { group: "GG_UstAmirler", role: "SENIOR_MANAGER" },
   { group: "GG_BilgiGuvenligi", role: "INFOSEC_MANAGER" },
   { group: "GG_BirimAmirleri", role: "UNIT_MANAGER" },
-  { group: "GG_Envanter", role: "UNIT_MANAGER" },
   { group: "Domain Users", role: "USER" },
 ];
 
@@ -108,12 +107,13 @@ export const MODULE_LABELS: Record<AppModule, string> = {
   ayarlar: "Ayarlar",
 };
 
-const ALL_ROLES_NO_ADMIN: PersonnelRole[] = [...PERSONNEL_ROLES];
+const ALL_ROLES_NO_ADMIN: PersonnelRole[] = PERSONNEL_ROLES.filter((role) => role !== "USER");
 const NO_API_ROLES: PersonnelRole[] = ["SUPER_ADMIN", "SYSTEM_ADMIN", "SENIOR_MANAGER", "INFOSEC_MANAGER"];
 
 /**
  * Modül erişimi (rol bazlı taban):
- * - Düz kullanıcı ve birim amiri: Ayarlar ve API hariç tüm modüller (kayıtlar kapsam filtresiyle sınırlanır, bkz. data-scope.ts).
+ * - Düz kullanıcı: hizmet masası (talepler), envanter/personel (yalnızca kendi kaydı), katalog, rapor, kılavuz. ITIL süreç modüllerini yalnızca kendisine görev atandığında görür (assigned.ts).
+ * - Birim amiri: Ayarlar ve API hariç tüm modüller (kayıtlar kapsam filtresiyle sınırlanır, bkz. data-scope.ts).
  * - Sistem yöneticisi: Ayarlar hariç tüm modüller.
  * - Diğer roller (üst amir, bilgi güvenliği, süper admin): önceki davranış.
  */
@@ -145,10 +145,6 @@ export function isRequesterOnly(role?: string | null) {
 
 export function canMutateInventory(role?: string | null) {
   return isPersonnelRole(role ?? "") && role !== "USER";
-}
-
-export function canViewAllInventory(role?: string | null) {
-  return canMutateInventory(role);
 }
 
 export function canAssignRole(actorRole: string | null | undefined, targetRole: string) {
@@ -186,17 +182,6 @@ export function canManagePerson(actorRole: string | null | undefined, targetRole
   if (!actorRole || !isPersonnelRole(actorRole) || !isPersonnelRole(targetRole)) return false;
   if (actorRole === "SUPER_ADMIN") return true;
   return ROLE_RANK[actorRole] > ROLE_RANK[targetRole];
-}
-
-export function canAccess(role: string, pathname: string) {
-  if (pathname.startsWith("/api/")) return true;
-  if (pathname === "/yetkisiz") return true;
-  if (pathname.startsWith("/onay/posta") || pathname === "/indir" || pathname.startsWith("/indir/")) return true;
-  if (role === "SUPER_ADMIN") return true;
-  const mod = moduleForPath(pathname);
-  if (!mod) return false;
-  if (!isPersonnelRole(role)) return false;
-  return MODULE_ROLES[mod].includes(role);
 }
 
 export function canDeleteRecords(role?: string | null) {

@@ -7,6 +7,7 @@ import {
   BookMarked,
   BookOpen,
   ClipboardList,
+  Printer,
   Code2,
   Bug,
   KanbanSquare,
@@ -46,7 +47,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { logout } from "@/lib/actions/auth";
 import { APP_VERSION } from "@/lib/app-version";
-import { canAccess, moduleForPath, type AppModule } from "@/lib/auth/rbac";
+import { moduleForPath, type AppModule } from "@/lib/auth/rbac";
 import type { SessionUser } from "@/lib/auth/session";
 import type { RequestOffice } from "@/lib/itil/request-types";
 import type { OfficeNames } from "@/lib/itil/office-names";
@@ -118,7 +119,7 @@ function NavContent({
       const mod = moduleForPath(href);
       return !mod || allowedModules.includes(mod);
     }
-    return !role || canAccess(role, href);
+    return true;
   };
 
   return (
@@ -231,6 +232,9 @@ function NavContent({
   );
 }
 
+/** ITIL formları ve kayıt sayfaları: üst çubukta "Yazdır" düğmesi gösterilir. */
+const PRINTABLE_PREFIXES = ["/talepler", "/olay", "/problem", "/degisiklik", "/yama", "/konfigurasyon", "/zafiyet", "/firma-sla", "/surec", "/cevik", "/katalog"];
+
 function UserBar({
   user,
   menu,
@@ -241,6 +245,8 @@ function UserBar({
   inbox: InboxSnapshot;
 }) {
   const { t } = useI18n();
+  const pathname = usePathname();
+  const printable = PRINTABLE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   return (
     <header className="app-header sticky top-0 z-30 flex h-16 items-center justify-between gap-3 overflow-visible px-3 sm:px-5">
       <div className="flex min-w-0 items-center gap-2">
@@ -256,6 +262,11 @@ function UserBar({
         </div>
       </div>
       <div className="flex items-center gap-2 sm:gap-3">
+        {printable ? (
+          <Button type="button" variant="ghost" size="icon" title="Yazdır" aria-label="Yazdır" onClick={() => window.print()}>
+            <Printer className="size-4" />
+          </Button>
+        ) : null}
         <HeaderSearch />
         <InboxDrawer inbox={inbox} />
         <LanguageSwitcher />
@@ -383,7 +394,13 @@ export function AppShell({
             }
           />
         ) : null}
-        <main className="app-canvas min-w-0 flex-1">{children}</main>
+        <main className="app-canvas min-w-0 flex-1">
+          <p className="print-only border-b px-6 py-3 text-sm" suppressHydrationWarning>
+            BT Hizmet Yönetimi · {pathname} · {new Date().toLocaleString("tr-TR")}
+            {user ? ` · ${user.fullName}` : ""}
+          </p>
+          {children}
+        </main>
       </div>
     </div>
     </OfficeNamesProvider>

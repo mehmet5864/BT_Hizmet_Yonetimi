@@ -42,7 +42,8 @@ export default async function AgileHomePage() {
   ]);
   // Düz kullanıcı, kendisine hiç görev düşmemişse ürün / ekip listesini görmez.
   const dataScope = await getDataScope();
-  const plainUser = Boolean(dataScope && !dataScope.all && dataScope.role === "USER");
+  const cevikScope = dataScope?.modules?.cevik ?? dataScope;
+  const plainUser = Boolean(cevikScope && !cevikScope.all && cevikScope.role === "USER");
   const showProducts = products.length > 0 || !plainUser;
   const itemCounts = await db.agileItem.groupBy({ by: ["productId", "status"], _count: { _all: true } });
   const openBy = new Map<string, number>();

@@ -4,6 +4,7 @@ import {
   type AppModule,
   moduleForPath,
 } from "@/lib/auth/rbac";
+import { ASSIGNABLE_MODULES, assignedGrantName } from "@/lib/auth/assigned-defs";
 import type { PersonnelRole } from "@/lib/itil/constants";
 import type { RequestOffice } from "@/lib/itil/request-types";
 
@@ -22,11 +23,65 @@ export const MODULE_LEVEL_LABELS: Record<ModuleLevel, string> = {
   ADMIN: "Modül yöneticisi",
 };
 
+/** Kapsam: düzey hangi kayıtlar üzerinde geçerli (kayıt süzmesi). */
+export const MODULE_SCOPES = ["OWN", "UNIT", "OFFICE", "ALL"] as const;
+export type ModuleScope = (typeof MODULE_SCOPES)[number];
+
+export const MODULE_SCOPE_LABELS: Record<ModuleScope, string> = {
+  OWN: "Kendi verisi",
+  UNIT: "Alt çalışan verisi",
+  OFFICE: "Talep birimi çalışanı",
+  ALL: "Tam yetkili (tümü)",
+};
+
+export const MODULE_SCOPE_HINTS: Record<ModuleScope, string> = {
+  OWN: "Kendi açtığı, kendine atanan veya sahibi olduğu kayıtlar (talep eden dahil).",
+  UNIT: "Biriminin ve doğrudan bağlı çalışanlarının kayıtları.",
+  OFFICE: "Çalıştığı talep biriminin (Sistem, Network, Siber…) kayıtları.",
+  ALL: "Modüldeki tüm kayıtlar.",
+};
+
 export type ModuleGrant = {
   module: AppModule;
   group: string;
   level: ModuleLevel;
+  /** Yoksa rolün eski (varsayılan) kapsam kuralı geçerlidir. */
+  scopes?: ModuleScope[];
 };
+
+export function isModuleScope(value: string): value is ModuleScope {
+  return (MODULE_SCOPES as readonly string[]).includes(value);
+}
+
+/**
+ * Rolün varsayılan kapsamı (eski, koda gömülü davranışın birebir karşılığı).
+ * Bir hücrede kapsam açıkça seçilmediyse ekran bunu gösterir; kayıt süzmesi eski kuralı uygular.
+ */
+export function defaultScopes(role: string, mod: AppModule): ModuleScope[] {
+  if (role === "SUPER_ADMIN") return ["ALL"];
+  if (mod === "personel") {
+    if (role === "UNIT_MANAGER" || role === "SENIOR_MANAGER") return ["OWN", "UNIT"];
+    return ["OWN"];
+  }
+  if (mod === "envanter") return role === "UNIT_MANAGER" || role === "SYSTEM_ADMIN" ? ["OWN", "UNIT"] : ["OWN"];
+  if (role === "SENIOR_MANAGER" || role === "INFOSEC_MANAGER") return ["ALL"];
+  if (role === "SYSTEM_ADMIN") return ["OWN", "UNIT", "OFFICE"];
+  if (role === "UNIT_MANAGER") return ["OWN", "UNIT"];
+  return ["OWN"];
+}
+
+/** Görüntüleyenin bu modüldeki açık kapsamları; hiçbir eşleşen yetkide kapsam yoksa null (eski kural). */
+export function scopesFor(grants: ModuleGrant[], names: string[], moduleName: AppModule): ModuleScope[] | null {
+  const normalized = names.map((name) => name.trim().toLocaleLowerCase("tr-TR"));
+  let found: Set<ModuleScope> | null = null;
+  for (const grant of grants) {
+    if (grant.module !== moduleName || !grant.scopes?.length) continue;
+    if (!normalized.includes(grant.group.trim().toLocaleLowerCase("tr-TR"))) continue;
+    found ??= new Set();
+    grant.scopes.forEach((scope) => found!.add(scope));
+  }
+  return found ? [...found] : null;
+}
 
 export const ACL_MODULES = Object.keys(MODULE_LABELS) as AppModule[];
 
@@ -117,17 +172,20 @@ export function defaultModuleGrants(): ModuleGrant[] {
   for (const [mod, roles] of Object.entries(MODULE_ROLES) as [AppModule, PersonnelRole[]][]) {
     for (const role of roles) {
       // Düz kullanıcı: envanter ve personelde yalnızca görüntüler; diğer modüllerde kendi kayıtlarında işlem yapar.
+      // Personel yönetimi yalnızca süper yönetici; diğerleri yalnızca kendi (birim amiri: birimi) kaydını görür.
       const level: ModuleLevel =
         mod === "ayarlar"
           ? "ADMIN"
-          : mod === "envanter" && role === "SUPER_ADMIN"
+          : (mod === "envanter" || mod === "personel") && role === "SUPER_ADMIN"
             ? "ADMIN"
-            : role === "USER" && (mod === "envanter" || mod === "personel")
+            : mod === "personel" || (role === "USER" && mod === "envanter")
               ? "VIEW"
               : "HANDLE";
       grants.push({ module: mod, group: roleGrantName(role), level });
     }
   }
+  // Düz kullanıcı ITIL süreçlerini yalnızca kendisine görev atandığında görür ("assigned:<modül>" grubu).
+  for (const mod of ASSIGNABLE_MODULES) grants.push({ module: mod, group: assignedGrantName(mod), level: "HANDLE" });
   grants.push({ module: "envanter", group: "GG_Envanter", level: "ADMIN" });
   grants.push({ module: "talepler", group: "office:SERVIS", level: "HANDLE" });
   grants.push({ module: "talepler", group: "office:SISTEM", level: "HANDLE" });
@@ -138,7 +196,7 @@ export function defaultModuleGrants(): ModuleGrant[] {
   return grants;
 }
 
-export const ACL_VERSION = 2;
+export const ACL_VERSION = 3;
 
 /** Eski (sürüm 1) kayıtlarda rol tabanlı yetkiler yeni varsayılanlarla değişir; AD grubu / ofis yetkileri korunur. */
 export function migrateGrants(raw: unknown): ModuleGrant[] {
@@ -158,7 +216,8 @@ export function normalizeGrants(raw: unknown): ModuleGrant[] {
     const group = String(row.group ?? "").trim();
     const level = String(row.level ?? "");
     if (!isAppModule(moduleName) || !group || !isModuleLevel(level)) continue;
-    grants.push({ module: moduleName, group, level });
+    const scopes = Array.isArray(row.scopes) ? row.scopes.map(String).filter(isModuleScope) : [];
+    grants.push(scopes.length ? { module: moduleName, group, level, scopes } : { module: moduleName, group, level });
   }
   return grants.length ? grants : defaultModuleGrants();
 }
@@ -222,10 +281,6 @@ export function canAccessWithAcl(
   return hasModuleLevel(grants, names, mod, "VIEW", role);
 }
 
-export function isL1RequestType(requestType: string) {
-  return requestType.startsWith("SD_");
-}
-
 export const LAYER2_OFFICES = [
   "SISTEM",
   "NETWORK",
@@ -265,14 +320,26 @@ type AssetViewer = {
   unitPersonIds?: string[];
 };
 
-function assetOwnerIds(viewer: AssetViewer) {
+/** Envanterde açıkça seçilmiş kapsam (yetki matrisi); yoksa null ve eski kural geçerli. */
+function inventoryScopes(viewer: AssetViewer, grants: ModuleGrant[]) {
+  return viewer.role === "SUPER_ADMIN" ? null : scopesFor(grants, viewer.groups ?? [], "envanter");
+}
+
+function assetOwnerIds(viewer: AssetViewer, grants: ModuleGrant[] = []) {
+  const tags = inventoryScopes(viewer, grants);
+  if (tags) return tags.includes("UNIT") && viewer.unitPersonIds?.length ? viewer.unitPersonIds : [viewer.id];
   return viewer.unitPersonIds?.length ? viewer.unitPersonIds : [viewer.id];
+}
+
+function seesAllAssets(viewer: AssetViewer, grants: ModuleGrant[]) {
+  if (canSeeAllInventory(inventoryLevel(grants, viewer))) return true;
+  return Boolean(inventoryScopes(viewer, grants)?.includes("ALL"));
 }
 
 /** Envanter yöneticisi hepsini görür; diğerleri yalnızca zimmetinde olanı (birim amiri / sistem yöneticisi: birim personelinin de). */
 export function visibleAssetWhere(viewer: AssetViewer, grants: ModuleGrant[]) {
-  if (canSeeAllInventory(inventoryLevel(grants, viewer))) return {};
-  return { ownerId: { in: assetOwnerIds(viewer) } };
+  if (seesAllAssets(viewer, grants)) return {};
+  return { ownerId: { in: assetOwnerIds(viewer, grants) } };
 }
 
 export function canViewAsset(
@@ -280,6 +347,6 @@ export function canViewAsset(
   grants: ModuleGrant[],
   asset: { ownerId: string; departmentId?: string | null },
 ) {
-  if (canSeeAllInventory(inventoryLevel(grants, viewer))) return true;
-  return assetOwnerIds(viewer).includes(asset.ownerId);
+  if (seesAllAssets(viewer, grants)) return true;
+  return assetOwnerIds(viewer, grants).includes(asset.ownerId);
 }

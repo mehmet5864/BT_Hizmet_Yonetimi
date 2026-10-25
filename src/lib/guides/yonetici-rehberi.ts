@@ -40,11 +40,11 @@ export const ADMIN_GUIDE_ILLUSTRATED: Guide = {
       items: [
         "Uygulamayı açın ve Süper yönetici rolüyle giriş yapın (Ayarlar yalnızca bu role açıktır).",
         "Lisansı yükleyin: Ayarlar → Lisans. Lisanssız modüller kapalı kalır.",
-        "Ayarlar → Tanımlar: birimler (talep birimleri) ve süreç yöneticilerini girin.",
+        "Ayarlar → Yetki ve roller: süreç yöneticilerini 1. sekmeden, talep birimlerini 3. sekmeden girin.",
         "E-posta (SMTP): onay bildirimleri için önce bunu kurun ve test iletisi gönderin.",
-        "Active Directory: servis hesabını hazırlayın, bağlantıyı deneyin, grup → rol eşlemesini yapın.",
+        "Active Directory: servis hesabını hazırlayın, bağlantıyı deneyin; ardından Ayarlar → Yetki ve roller sayfasında grup → rol eşlemesini yapın.",
         "Yönetici onayları ve iş akışlarını tanımlayın.",
-        "Modül yetkilerini rollere göre ayarlayın.",
+        "Ayarlar → Yetki ve roller → Modül yetkileri: hangi grubun hangi modülü kullanacağını ayarlayın.",
         "SIEM ve zafiyet tarayıcı entegrasyonlarını kurun, test edin.",
         "Güvenlik ayarlarını (parola, oturum, kilit) kurum politikasına göre belirleyin.",
         "Yedek alın ve geri yüklemeyi bir kez deneyin.",
@@ -53,7 +53,7 @@ export const ADMIN_GUIDE_ILLUSTRATED: Guide = {
     { t: "img", src: "/guides/ekran-ayarlar.svg", alt: "Ayarlar ekranı", caption: "Ayarlar sayfası ve sekmeler (şema)." },
     {
       t: "p",
-      text: "Sekmeler: Tanımlar, Active Directory, SIEM, Zafiyet tarama, Yönetici onayları, E-posta, Yetkilendirme, Modül yetkileri, Görünüm, Yedek, Puanlama ve Audit log. Lisans, İş akışları ve Güvenlik sayfalarına Ayarlar’ın üstündeki bağlantılardan gidilir; API anahtarları API arayüzü sayfasındadır.",
+      text: "Sekmeler: Active Directory, SIEM, Zafiyet tarama, Yönetici onayları, E-posta, Görünüm, Yedek, Puanlama ve Audit log. Rol, AD grubu, modül yetkisi, talep grupları, süreç yöneticileri ve talep birimleri tek sayfada toplanmıştır: Yetki ve roller. Lisans, İş akışları, Yetki ve roller ve Güvenlik sayfalarına Ayarlar’ın üstündeki bağlantılardan gidilir; API anahtarları API arayüzü sayfasındadır.",
     },
 
     { t: "h1", text: "E-posta (SMTP)" },
@@ -132,16 +132,16 @@ export const ADMIN_GUIDE_ILLUSTRATED: Guide = {
       ],
     },
     { t: "h2", text: "Grupları role eşleme" },
-    { t: "img", src: "/guides/yonetim-rbac.svg", alt: "Yetkilendirme sekmesi", caption: CAP },
+    { t: "img", src: "/guides/yonetim-rbac.svg", alt: "Yetki ve roller sayfası", caption: CAP },
     {
       t: "ol",
       items: [
-        "Ayarlar → Yetkilendirme sekmesini açın.",
+        "Ayarlar → Yetki ve roller → “2 · AD grupları” sekmesini açın; AD grubunu sürükleyip ilgili rolün üzerine bırakın.",
         "“Eşleşme yoksa AD rolü” alanını genelde Kullanıcı olarak bırakın (1).",
         "“Grup eşlemesi ekle” ile her AD grubunun adını ve karşılığı olan rolü seçin (2, 3).",
         "Kaydedin. Grup adı büyük/küçük harf fark etmeksizin birebir eşleşmelidir. Kullanıcı birden fazla eşlenmiş gruba üyeyse yetkisi en yüksek olan rol uygulanır (Kullanıcı < Birim amiri < Üst amir < Bilgi güvenliği yöneticisi < Sistem yöneticisi < Süper yönetici).",
         "Personel kartındaki “rol kaynağı” alanı belirleyicidir: Manuel ise elle atanan rol, Active Directory ise gruplardan gelen rol, “AD + manuel” ise ikisinden yüksek olanı geçerlidir.",
-        "Ayarlar → Modül yetkileri sekmesinde hangi rolün hangi menüyü göreceğini belirleyin.",
+        "“1 · Yetki matrisi” sekmesinde hücrelere tıklayarak hangi rolün hangi modülü hangi düzeyde kullanacağını belirleyin; AD grubu veya talep birimi için etiketi modül kartına sürükleyin.",
       ],
     },
     { t: "h2", text: "Doğrulama" },
@@ -330,7 +330,10 @@ export const ADMIN_GUIDE_ILLUSTRATED: Guide = {
     {
       t: "ul",
       items: [
-        "Modül yetkileri: hangi rolün hangi modülü hangi düzeyde (görme, işleme, yönetme) kullanacağı. Menüler buna göre görünür.",
+        "Yetki ve roller (Ayarlar → Yetki ve roller): Yetki matrisi (düzey: yetkisiz, gör, işle, yönet; kapsam: kendi verisi, alt çalışan verisi, talep birimi çalışanı, tam yetkili — etiketler hücrelere sürüklenir; süreç yöneticileri dahil), AD grupları (grup → rol ve talep kategorisi → AD güvenlik grubu, sürükle-bırak) ve Talep birimleri tek sayfadadır. Menüler buna göre görünür. Aynı modül ve grup iki kez girilirse kayıtta en yüksek düzey korunur.",
+        "Talebi kimin göreceği üç yerden gelir: kişinin talep birimi, AD grubu → talep kategorisi eşlemesi (AD grupları sekmesi) ve talep birimi yetkisi (office:*). Kategoriye AD grubu eşlenmişse yalnızca o grubun üyeleri işler; eşlenmemişse birim kuyruğu geçerlidir.",
+        "Onay: Ayarlar → Yönetici onayları standart kademeleri (birim amiri, üst amir, bilgi güvenliği) açıp kapatır; Ayarlar → İş akışları ise özel onay zinciri tasarlar. İkisini aynı kayıt türünde birlikte açmadan önce bir deneme kaydıyla sonucu kontrol edin.",
+        "Raporlar → Denetim → Yetki matrisi: tüm yetki ve eşlemelerin dökümü (yetki inceleme kanıtı).",
         "Güvenlik (Ayarlar → Güvenlik): en az parola uzunluğu, oturum süresi, kilit için hatalı giriş sayısı ve kilit süresi. Kurum politikasına göre ayarlayın.",
         "Lisans (Ayarlar → Lisans): lisans dosyasını yükleyin. Süresi dolan veya modülü içermeyen özellikler kısıtlı modda çalışır; API de lisanssız modüle 403 döner.",
         "Puanlama ve Görünüm: puan kuralları ve tema ayarları.",

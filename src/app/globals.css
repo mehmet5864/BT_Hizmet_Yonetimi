@@ -774,6 +774,34 @@ tbody tr:hover {
   .login-canvas::after {
     display: none;
   }
+
+  /* Menü, üst çubuk ve bildirimler çıktıda görünmez; form tam genişlikte basılır. */
+  .app-sidebar,
+  .app-header,
+  [data-sonner-toaster],
+  .no-print {
+    display: none !important;
+  }
+
+  html,
+  body,
+  .app-canvas {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .app-canvas > div {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+}
+
+.print-only {
+  display: none;
 }
 
 /* Canlı akış: bağlantı çizgisinde gezen nokta */

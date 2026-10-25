@@ -28,7 +28,7 @@ export const AGILE_GUIDE: Guide = {
     {
       t: "note",
       title: "Menü yolu",
-      text: "ITIL süreçleri menüsü → Çevik çalışma (/cevik). Kılavuz: Kılavuzlar → Çevik çalışma kılavuzu. PDF: /docs/agile-kilavuzu.pdf. Yetki: Ayarlar → Modül yetkileri → “Çevik çalışma (Agile)”.",
+      text: "ITIL süreçleri menüsü → Çevik çalışma (/cevik). Kılavuz: Kılavuzlar → Çevik çalışma kılavuzu. PDF: /docs/agile-kilavuzu.pdf. Yetki: Ayarlar → Yetki ve roller → Modül yetkileri → “Çevik çalışma (Agile)”.",
     },
 
     { t: "h1", text: "Çevik yaklaşım nedir" },
@@ -241,7 +241,7 @@ export const AGILE_GUIDE: Guide = {
     { t: "h1", text: "Yetki ve roller" },
     {
       t: "p",
-      text: "Çevik çalışma modülü varsayılan olarak Süper yönetici, Sistem yöneticisi, Üst amir, Birim amiri ve Bilgi güvenliği yöneticisi rollerine açıktır; Kullanıcı rolüne kapalıdır. Ayarlar → Modül yetkileri sekmesinden grup bazlı Görüntüleme, İşlem ve Yönetim düzeyleri verilebilir. Yorum silme yalnızca yorum sahibine ve süper yöneticiye açıktır.",
+      text: "Çevik çalışma modülü varsayılan olarak Süper yönetici, Sistem yöneticisi, Üst amir, Birim amiri ve Bilgi güvenliği yöneticisi rollerine açıktır; Kullanıcı rolüne kapalıdır. Ayarlar → Yetki ve roller → Modül yetkileri sekmesinden grup bazlı Görüntüleme, İşlem ve Yönetim düzeyleri verilebilir. Yorum silme yalnızca yorum sahibine ve süper yöneticiye açıktır.",
     },
 
     { t: "h1", text: "Senaryolar" },

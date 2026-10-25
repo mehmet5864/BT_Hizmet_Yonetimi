@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ArchiveRestore, BadgeCheck, KeyRound, Lock, Mail, Palette, Radar, ShieldCheck, Users } from "lucide-react";
+import { ArchiveRestore, BadgeCheck, KeyRound, Lock, Mail, Palette, Radar, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleHero, WidgetRow } from "@/components/dashboard/module-widgets";
@@ -11,7 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { getViewer } from "@/lib/auth/viewer";
 import { getLicenseState } from "@/lib/license";
 import { defaultScorePoints, SCORE_ACTIONS, SCORE_MODULES, SCORE_SEVERITIES } from "@/lib/scoring-defs";
-import { CORE_OFFICER_KEYS, OFFICER_DEFS, officerCount, publicSettings } from "@/lib/settings";
+import { publicSettings } from "@/lib/settings";
 import { ensureSystemSettings } from "@/lib/settings-store";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +20,10 @@ export default async function SettingsPage({ searchParams }: PageProps<"/ayarlar
   const params = await searchParams;
   const sekme = Array.isArray(params.sekme) ? params.sekme[0] : params.sekme;
   if (sekme === "api") redirect("/api-arayuzu");
+  if (sekme === "tanimlar") redirect("/ayarlar/yetkiler?sekme=yoneticiler");
+  if (sekme === "subeler") redirect("/ayarlar/yetkiler?sekme=birimler");
+  if (sekme === "rbac") redirect("/ayarlar/yetkiler?sekme=roller");
+  if (sekme === "acl") redirect("/ayarlar/yetkiler?sekme=moduller");
   const [viewer, scoreRows] = await Promise.all([getViewer(), prisma.scoreRule.findMany()]);
   const isSuper = viewer?.role === "SUPER_ADMIN";
   const license = isSuper ? await getLicenseState() : null;
@@ -43,20 +47,11 @@ export default async function SettingsPage({ searchParams }: PageProps<"/ayarlar
     prisma.department.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, unitType: true, parentId: true, managerId: true } }),
   ]);
   const approvalsOn = [settings.approval.unitManager, settings.approval.seniorManager, settings.approval.infosec].filter(Boolean).length;
-  const officersOn = officerCount(settings.officers);
-  const coreOn = CORE_OFFICER_KEYS.filter((key) => settings.officers[key]).length;
-  const officerNames = new Map(people.map((person) => [person.id, person.fullName]));
-  const officerHint = OFFICER_DEFS.map((def) => officerNames.get(settings.officers[def.key]))
-    .filter(Boolean)
-    .filter((name, index, all) => all.indexOf(name) === index)
-    .slice(0, 4)
-    .join(" · ");
-
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 sm:p-8">
       <ModuleHero
         title="Ayarlar"
-        description="Süreç yöneticileri, Active Directory, SIEM, zafiyet tarama, yönetici onayları, grup bazlı modül yetkileri, e-posta, tema, ayar yedeği (export / import config) ve audit log. API anahtarları API arayüzü sayfasındadır."
+        description="Rol, AD grubu ve modül yetkileri “Yetki ve roller” sayfasındadır. Süreç yöneticileri, Active Directory, SIEM, zafiyet tarama, yönetici onayları, e-posta, tema, ayar yedeği (export / import config) ve audit log."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm">
@@ -66,27 +61,15 @@ export default async function SettingsPage({ searchParams }: PageProps<"/ayarlar
               <Link href="/ayarlar/is-akislari">İş akışları</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <Link href="/ayarlar/talep-gruplari">Talep grupları</Link>
+              <Link href="/ayarlar/yetkiler">Yetki ve roller</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link href="/ayarlar/guvenlik">Güvenlik</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/api-arayuzu#anahtarlar">API anahtarlarına git</Link>
             </Button>
           </div>
         }
       />
       <WidgetRow>
-        <StatWidget
-          icon={<Users className="size-4" />}
-          label="Temel süreç yöneticileri"
-          value={`${coreOn}/${CORE_OFFICER_KEYS.length}`}
-          hint={coreOn ? `Toplam ${officersOn}/${OFFICER_DEFS.length} · ${officerHint}` : "Önce şube ve onay yöneticilerini seçin"}
-          href="/ayarlar?sekme=tanimlar"
-          tone={coreOn === CORE_OFFICER_KEYS.length ? "ok" : coreOn > 0 ? "info" : "warning"}
-          bar={Math.round((coreOn / CORE_OFFICER_KEYS.length) * 100)}
-        />
         <StatWidget
           icon={<Palette className="size-4" />}
           label="Aktif onay"

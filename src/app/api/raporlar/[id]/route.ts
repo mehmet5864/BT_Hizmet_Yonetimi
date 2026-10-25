@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { hasModuleLevel } from "@/lib/auth/acl";
+import { canAccessWithAcl, hasModuleLevel } from "@/lib/auth/acl";
 import { getViewerAcl } from "@/lib/auth/viewer";
 import { getSession } from "@/lib/auth/session";
 import { canViewReport } from "@/lib/reports/catalog";
@@ -25,7 +25,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
-  if (!canViewReport(viewer.role ?? user.role, id)) {
+  if (!canViewReport((path) => canAccessWithAcl(grants, viewer.groups ?? [], path, viewer.role), id)) {
     return NextResponse.json({ error: "Bu rapora yetkiniz yok." }, { status: 403 });
   }
   const search = new URL(request.url).searchParams;

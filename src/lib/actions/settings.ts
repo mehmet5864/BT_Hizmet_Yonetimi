@@ -9,7 +9,7 @@ import { probeActiveDirectory } from "@/lib/integrations/ad";
 import { sendSiemEvent } from "@/lib/integrations/cef";
 import { probeSmtp, sendMail } from "@/lib/integrations/mail";
 import { probeScanner } from "@/lib/integrations/scanner";
-import { ACL_VERSION, isAppModule, isModuleLevel, type ModuleGrant } from "@/lib/auth/acl";
+import { ACL_VERSION, isAppModule, isModuleLevel, isModuleScope, MODULE_LEVEL_RANK, type ModuleGrant } from "@/lib/auth/acl";
 import { isPersonnelRole, type AdRoleMap } from "@/lib/auth/rbac";
 import { requireModule } from "@/lib/auth/viewer";
 import { isUnitType, UNIT_TYPE_LABELS } from "@/lib/itil/unit-types";
@@ -74,6 +74,7 @@ export async function saveAdSettings(_prev: ActionState, formData: FormData): Pr
   };
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   return saved(undefined, "Active Directory ayarları kaydedildi.");
 }
 
@@ -102,6 +103,7 @@ export async function saveSiemSettings(_prev: ActionState, formData: FormData): 
   };
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   return saved(undefined, "SIEM ayarları kaydedildi.");
 }
 
@@ -137,6 +139,7 @@ export async function saveOfficerSettings(_prev: ActionState, formData: FormData
   current.officers = officers;
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   revalidatePath("/");
   return saved(undefined, "Modül yöneticileri kaydedildi.");
 }
@@ -160,6 +163,7 @@ export async function saveOfficeNameSettings(_prev: ActionState, formData: FormD
   current.officeNames = names;
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   revalidatePath("/talepler");
   revalidatePath("/personel");
   revalidatePath("/", "layout");
@@ -183,6 +187,7 @@ export async function saveRequestGroupSettings(_prev: ActionState, formData: For
   current.requestGroups = mergeRequestGroups(incoming);
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   revalidatePath("/talepler");
   return saved(undefined, "Talep türü – AD grubu eşlemesi kaydedildi.");
 }
@@ -203,6 +208,7 @@ export async function saveApprovalSettings(_prev: ActionState, formData: FormDat
   };
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   return saved(undefined, "Onay ayarları kaydedildi.");
 }
 
@@ -234,6 +240,7 @@ export async function saveScannerSettings(_prev: ActionState, formData: FormData
   };
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   revalidatePath("/zafiyet");
   return saved(undefined, "Zafiyet tarama cihazı ayarları kaydedildi.");
 }
@@ -260,6 +267,7 @@ export async function saveMailSettings(_prev: ActionState, formData: FormData): 
   };
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   return saved(undefined, "E-posta ayarları kaydedildi.");
 }
 
@@ -287,19 +295,30 @@ export async function saveModuleAclSettings(_prev: ActionState, formData: FormDa
   const modules = formData.getAll("grantModule").map((value) => String(value).trim());
   const groups = formData.getAll("grantGroup").map((value) => String(value).trim());
   const levels = formData.getAll("grantLevel").map((value) => String(value).trim());
+  const scopeLists = formData.getAll("grantScopes").map((value) => String(value).trim());
   const grants: ModuleGrant[] = [];
   for (let i = 0; i < Math.max(modules.length, groups.length, levels.length); i += 1) {
     const moduleName = modules[i];
     const group = groups[i];
     const level = levels[i];
     if (!moduleName || !group || !level || !isAppModule(moduleName) || !isModuleLevel(level)) continue;
-    grants.push({ module: moduleName, group, level });
+    const scopes = (scopeLists[i] ?? "").split(",").map((x) => x.trim()).filter(isModuleScope);
+    grants.push(scopes.length ? { module: moduleName, group, level, scopes } : { module: moduleName, group, level });
   }
-  current.acl.grants = grants.length ? grants : current.acl.grants;
+  // Mükerrer (aynı modül + grup) satırlar tek satıra iner; en yüksek düzey korunur.
+  const merged = new Map<string, ModuleGrant>();
+  for (const grant of grants) {
+    const key = `${grant.module}|${grant.group.toLocaleLowerCase("tr-TR")}`;
+    const prev = merged.get(key);
+    if (!prev || MODULE_LEVEL_RANK[grant.level] > MODULE_LEVEL_RANK[prev.level]) merged.set(key, grant);
+  }
+  const unique = [...merged.values()];
+  current.acl.grants = unique.length ? unique : current.acl.grants;
   current.acl.version = ACL_VERSION;
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
-  revalidatePath("/");
+  revalidatePath("/ayarlar/yetkiler");
+  revalidatePath("/", "layout");
   return saved(undefined, "Modül yetkileri kaydedildi.");
 }
 
@@ -321,6 +340,7 @@ export async function saveRbacSettings(_prev: ActionState, formData: FormData): 
   current.ad.roleMaps = roleMaps.length ? roleMaps : current.ad.roleMaps;
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   return saved(undefined, "AD grup → rol eşlemesi kaydedildi.");
 }
 
@@ -446,6 +466,7 @@ export async function exportSystemConfig(): Promise<ActionState> {
     },
   });
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   return { ...saved(undefined, "Ayar yedeği indirildi."), payload, filename };
 }
 
@@ -488,6 +509,7 @@ export async function importSystemConfig(_prev: ActionState, formData: FormData)
     },
   });
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   revalidatePath("/");
   const extra = cleaned.dropped
     ? ` ${cleaned.dropped} süreç yöneticisi bu personel listesinde yoktu, boş bırakıldı.`
@@ -505,6 +527,7 @@ export async function saveScoreRules(_prev: ActionState, formData: FormData): Pr
     if (reset) {
       await prisma.scoreRule.deleteMany({});
       revalidatePath("/ayarlar");
+      revalidatePath("/ayarlar/yetkiler");
       return saved(undefined, "Puanlar varsayılana döndürüldü.");
     }
     const ops = [];
@@ -533,6 +556,7 @@ export async function saveScoreRules(_prev: ActionState, formData: FormData): Pr
     }
     await prisma.$transaction(ops);
     revalidatePath("/ayarlar");
+    revalidatePath("/ayarlar/yetkiler");
     return saved(undefined, "Puanlama kaydedildi. Yeni puanlar bundan sonraki işlemlere uygulanır.");
   } catch {
     return { ok: false, message: "Puanlama kaydedilemedi." };
@@ -551,6 +575,7 @@ export async function addUnit(_prev: ActionState, formData: FormData): Promise<A
   const managerId = text(formData, "managerId");
   await prisma.department.create({ data: { name, unitType: type, parentId: parentId || null, managerId: managerId || null } });
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   revalidatePath("/personel");
   return saved(undefined, `Birim eklendi: ${name}`);
 }
@@ -580,6 +605,7 @@ export async function deleteUnit(_prev: ActionState, formData: FormData): Promis
     return { ok: false, message: `"${unit.name}" biriminde kayıtlar (talep, olay vb.) bulunduğu için silinemedi.` };
   }
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   revalidatePath("/personel");
   return saved(undefined, `Birim silindi: ${unit.name}`);
 }
@@ -608,6 +634,16 @@ export async function updateUnit(_prev: ActionState, formData: FormData): Promis
     data: { name, unitType: isUnitType(type) ? type : null, parentId: parentId || null, managerId: managerId || null },
   });
   revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/yetkiler");
   revalidatePath("/personel");
   return saved(undefined, `Birim güncellendi: ${name}`);
+}
+
+/** Tek formdan: AD grubu → rol eşlemesi ve talep kategorisi → AD grubu eşlemesi. */
+export async function saveAccessMappings(prev: ActionState, formData: FormData): Promise<ActionState> {
+  const roles = await saveRbacSettings(prev, formData);
+  if (!roles.ok) return roles;
+  const groups = await saveRequestGroupSettings(prev, formData);
+  if (!groups.ok) return groups;
+  return saved(undefined, "AD grup eşlemeleri (rol ve talep kategorisi) kaydedildi.");
 }

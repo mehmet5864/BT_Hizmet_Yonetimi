@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useState, useTransition } from "react";
-import { Archive, CircleHelp, FolderTree, KeyRound, Loader2, Lock, Mail, Palette, Radar, Save, ScrollText, ShieldCheck, Star, UserCheck, Users, Waypoints } from "lucide-react";
+import { Archive, CircleHelp, FolderTree, KeyRound, Loader2, Lock, Mail, Palette, Radar, Save, ScrollText, Star, UserCheck, Users, Waypoints } from "lucide-react";
 
 import { FieldShell } from "@/components/form-fields/field-shell";
 import { ReferenceSelect } from "@/components/form-fields/reference-select";
@@ -22,8 +23,6 @@ import {
   saveOfficerSettings,
   saveOfficeNameSettings,
   addUnit,
-  saveModuleAclSettings,
-  saveRbacSettings,
   saveScannerSettings,
   saveSiemSettings,
   testAdConnection,
@@ -31,9 +30,6 @@ import {
   testScannerConnection,
   testSiemConnection,
 } from "@/lib/actions/settings";
-import { ACL_MODULES, MODULE_LEVEL_LABELS, MODULE_LEVELS, type ModuleGrant } from "@/lib/auth/acl";
-import { MODULE_LABELS, MODULE_ROLES } from "@/lib/auth/rbac";
-import { PERSONNEL_ROLE_LABELS, PERSONNEL_ROLES } from "@/lib/itil/constants";
 import { EMPTY_STATE, type ActionState } from "@/lib/actions/shared";
 import {
   CORE_OFFICER_KEYS,
@@ -96,7 +92,7 @@ function Flag({
   );
 }
 
-function FormStatus({ state }: { state: ActionState }) {
+export function FormStatus({ state }: { state: ActionState }) {
   useEffect(() => {
     if (!state.message) return;
     if (state.ok) toast.success(state.message);
@@ -111,7 +107,7 @@ function FormStatus({ state }: { state: ActionState }) {
   );
 }
 
-function SaveBar({
+export function SaveBar({
   pending,
   testLabel,
   onTest,
@@ -150,30 +146,6 @@ function SaveBar({
   );
 }
 
-const OFFICER_GROUPS = [
-  {
-    title: "1 · Önce bunları atayın",
-    note: "Talep onayları (şube yöneticileri), bilgi güvenliği ve envanter onayları bunlara dayanır.",
-    keys: CORE_OFFICER_KEYS as readonly string[],
-    optional: false,
-  },
-  {
-    title: "2 · Önerilen",
-    note: "Yeni değişiklik ve yama kayıtlarında varsayılan talep amiri olurlar.",
-    keys: RECOMMENDED_OFFICER_KEYS as readonly string[],
-    optional: false,
-  },
-  {
-    title: "3 · İsteğe bağlı (kurumunuzda sorumlu varsa)",
-    note: "Boş bırakılanlar rolüne uygun bir kişiyle otomatik doldurulur; yalnızca varsayılan sorumlu ve modül yönetimi içindir.",
-    keys: [
-      "olay", "problem", "konfigurasyon", "zafiyet", "firmaSla", "zimmet", "personel", "rapor",
-      "katalog", "bilgi", "akis", "tasarim", "kullanilabilirlik", "kapasite", "sureklilik", "dogrulama", "surum",
-      "izleme", "degerlendirme", "cevik",
-    ] as readonly string[],
-    optional: true,
-  },
-] as const;
 
 export function SettingsForms({
   settings,
@@ -192,24 +164,12 @@ export function SettingsForms({
   audit: { logs: AuditLogItem[]; totals: { total: number; created: number; updated: number; deleted: number } };
   initialTab?: string;
 }) {
-  const [officerState, officerAction, officerPending] = useActionState(saveOfficerSettings, EMPTY_STATE);
-  // Bir kişi yalnızca tek bir modülün yöneticisi olabilir: başka modülde seçilenler listede görünmez.
-  const [officerValues, setOfficerValues] = useState<Record<string, string>>(() => ({ ...(settings.officers as Record<string, string>) }));
-  const [officeNameState, officeNameAction, officeNamePending] = useActionState(saveOfficeNameSettings, EMPTY_STATE);
-  const [unitState, unitAction, unitPending] = useActionState(addUnit, EMPTY_STATE);
-  const [unitType, setUnitType] = useState<string>("");
-  const [unitParent, setUnitParent] = useState<string>("__none__");
-  const [unitManager, setUnitManager] = useState<string>("");
   const [adState, adAction, adPending] = useActionState(saveAdSettings, EMPTY_STATE);
   const [siemState, siemAction, siemPending] = useActionState(saveSiemSettings, EMPTY_STATE);
   const [scannerState, scannerAction, scannerPending] = useActionState(saveScannerSettings, EMPTY_STATE);
   const [approvalState, approvalAction, approvalPending] = useActionState(saveApprovalSettings, EMPTY_STATE);
   const [mailState, mailAction, mailPending] = useActionState(saveMailSettings, EMPTY_STATE);
-  const [rbacState, rbacAction, rbacPending] = useActionState(saveRbacSettings, EMPTY_STATE);
-  const [aclState, aclAction, aclPending] = useActionState(saveModuleAclSettings, EMPTY_STATE);
   const [appearanceState, appearanceAction, appearancePending] = useActionState(saveAppearanceSettings, EMPTY_STATE);
-  const [maps, setMaps] = useState(settings.ad.roleMaps);
-  const [grants, setGrants] = useState<ModuleGrant[]>(settings.acl.grants);
   const [theme, setTheme] = useState<ThemeId>(settings.appearance.theme);
   const [pattern, setPattern] = useState<PatternId>(settings.appearance.pattern);
 
@@ -217,217 +177,22 @@ export function SettingsForms({
     if (appearanceState.ok) applyTheme(theme);
   }, [appearanceState, theme]);
 
-  const outerTab = initialTab === "subeler" ? "tanimlar" : initialTab || "tanimlar";
-  const innerTab = initialTab === "subeler" ? "subeler" : "yoneticiler";
+  const outerTab = initialTab && initialTab !== "tanimlar" && initialTab !== "subeler" ? initialTab : "ad";
 
   return (
     <Tabs defaultValue={outerTab}>
       <TabsList className="bg-card flex !h-auto min-h-9 w-full flex-wrap justify-start gap-1 rounded-xl border p-1.5 shadow-xs [&_[data-slot=tabs-trigger]]:gap-1.5 [&_[data-slot=tabs-trigger]]:rounded-lg [&_[data-slot=tabs-trigger]]:px-3 [&_[data-slot=tabs-trigger]_svg]:size-3.5">
-        <TabsTrigger value="tanimlar"><Users />Tanımlar</TabsTrigger>
         <TabsTrigger value="ad"><KeyRound />Active Directory</TabsTrigger>
         <TabsTrigger value="siem"><ScrollText />SIEM</TabsTrigger>
         <TabsTrigger value="scanner"><Radar />Zafiyet tarama</TabsTrigger>
         <TabsTrigger value="approval"><UserCheck />Yönetici onayları</TabsTrigger>
         <TabsTrigger value="mail"><Mail />E-posta</TabsTrigger>
-        <TabsTrigger value="rbac"><Lock />Yetkilendirme</TabsTrigger>
-        <TabsTrigger value="acl"><ShieldCheck />Modül yetkileri</TabsTrigger>
+        <Link href="/ayarlar/yetkiler" className="hover:bg-accent text-foreground/80 inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-sm font-medium"><Lock className="size-3.5" />Yetki ve roller</Link>
         <TabsTrigger value="appearance"><Palette />Görünüm</TabsTrigger>
         <TabsTrigger value="yedek"><Archive />Yedek</TabsTrigger>
         {canEditScore ? <TabsTrigger value="puanlama"><Star />Puanlama</TabsTrigger> : null}
         <TabsTrigger value="audit"><Waypoints />Audit log</TabsTrigger>
       </TabsList>
-
-      <TabsContent value="tanimlar">
-        <Tabs defaultValue={innerTab} className="gap-4">
-          <TabsList className="grid h-auto w-full grid-cols-2 sm:w-auto">
-            <TabsTrigger value="yoneticiler">Süreç yöneticileri</TabsTrigger>
-            <TabsTrigger value="subeler">Talep birimleri</TabsTrigger>
-          </TabsList>
-          <TabsContent value="yoneticiler">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Süreç yöneticileri</CardTitle>
-            <CardDescription>
-              Her modül ve ITIL süreci (envanter, zimmet, personel, katalog, bilgi bankası, süreç akışı, tasarım, kullanılabilirlik, kapasite, süreklilik, test, sürüm, izleme, değerlendirme, Çevik, rapor; ayrıca değişiklik, yama, konfigürasyon, zafiyet, firma/SLA, olay ve problem) için sorumlu personeli seçin.
-              Yeni kayıtlarda yönetici alanı bu kişilerle dolar. Şube yöneticileri kendi ofislerindeki talepleri onaylar; onaydan sonra kayıt işlemde (açıkta) devam eder. E-posta açıksa onaycıya doğrudan onay bağlantısı gider.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form action={officerAction} className="space-y-5">
-              <FormStatus state={officerState} />
-              <div className="bg-muted/40 flex flex-wrap items-center gap-3 rounded-lg border px-3 py-2 text-sm">
-                <span className="font-medium tabular-nums">
-                  {CORE_OFFICER_KEYS.filter((key) => officerValues[key]).length}/{CORE_OFFICER_KEYS.length}
-                </span>
-                <span className="text-muted-foreground text-xs">
-                  temel yönetici atandı · toplam {Object.values(officerValues).filter(Boolean).length}/{OFFICER_DEFS.length} · bir kişi yalnızca bir modülün yöneticisi olabilir
-                </span>
-                <div className="bg-muted ms-auto h-1.5 w-32 overflow-hidden rounded-full">
-                  <div className="bg-primary h-full rounded-full" style={{ width: `${(CORE_OFFICER_KEYS.filter((key) => officerValues[key]).length / CORE_OFFICER_KEYS.length) * 100}%` }} />
-                </div>
-              </div>
-              {OFFICER_GROUPS.map((group) => {
-                const fields = (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {OFFICER_DEFS.filter((def) => group.keys.includes(def.key)).map((def) => (
-                      <FieldShell key={def.key} id={`officer-${def.key}`} label={def.label} hint={def.hint}>
-                        <ReferenceSelect
-                          name={`officer_${def.key}`}
-                          entity="person"
-                          options={[
-                            { id: "", label: "Tanımsız" },
-                            ...people.filter((person) => !Object.entries(officerValues).some(([key, id]) => key !== def.key && id === person.id)),
-                          ]}
-                          value={officerValues[def.key] ?? ""}
-                          onValueChange={(id) => setOfficerValues((prev) => ({ ...prev, [def.key]: id }))}
-                          placeholder="Personel seçin"
-                          emptyLabel="Personel bulunamadı"
-                        />
-                      </FieldShell>
-                    ))}
-                  </div>
-                );
-                return group.optional ? (
-                  <details key={group.title} className="group space-y-3 rounded-lg border p-3">
-                    <summary className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs font-semibold tracking-wide uppercase">
-                      <FolderTree className="size-3.5" />
-                      {group.title}
-                      <span className="text-muted-foreground/70 font-normal normal-case">({group.keys.length} alan)</span>
-                    </summary>
-                    <p className="text-muted-foreground mt-2 mb-3 text-xs">{group.note}</p>
-                    {fields}
-                  </details>
-                ) : (
-                  <section key={group.title} className="space-y-3">
-                    <h3 className="text-muted-foreground flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
-                      <FolderTree className="size-3.5" />
-                      {group.title}
-                    </h3>
-                    <p className="text-muted-foreground text-xs">{group.note}</p>
-                    {fields}
-                  </section>
-                );
-              })}
-              <SaveBar pending={officerPending} />
-            </form>
-          </CardContent>
-        </Card>
-          </TabsContent>
-          <TabsContent value="subeler">
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle className="text-base">Birim ekle</CardTitle>
-                <CardDescription>
-                  Birim türünü seçin; isterseniz birim adını da yazın. Ad boş bırakılırsa tür adı kullanılır.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form action={unitAction} className="space-y-5">
-                  <FormStatus state={unitState} />
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <FieldShell id="unit-type" label="Birim türü" required hint="Kurum yapısındaki düzey.">
-                      <Select name="unitType" value={unitType} onValueChange={setUnitType}>
-                        <SelectTrigger className="w-full" id="unit-type">
-                          <SelectValue placeholder="Tür seçin" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {UNIT_TYPES.map((t) => (
-                            <SelectItem key={t} value={t}>{UNIT_TYPE_LABELS[t]}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FieldShell>
-                    <FieldShell id="unit-name" label="Birim adı" hint="Örn. Başkanlık veya Bilgi İşlem Daire Başkanlığı. Boşsa tür adı kullanılır.">
-                      <Input id="unit-name" name="name" maxLength={120} />
-                    </FieldShell>
-                    <FieldShell id="unit-parent" label="Bağlı olduğu üst birim" hint="İsteğe bağlı; hiyerarşiyi kurar.">
-                      <Select value={unitParent} onValueChange={setUnitParent}>
-                        <SelectTrigger className="w-full" id="unit-parent">
-                          <SelectValue placeholder="Yok (en üst birim)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">Yok (en üst birim)</SelectItem>
-                          {units.map((u) => (
-                            <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <input type="hidden" name="parentId" value={unitParent === "__none__" ? "" : unitParent} />
-                    </FieldShell>
-                    <FieldShell id="unit-manager" label="Birim amiri" hint="İsteğe bağlı; sonradan Personel'den de atanabilir.">
-                      <ReferenceSelect
-                        name="managerId"
-                        entity="person"
-                        options={[{ id: "", label: "Tanımsız" }, ...people]}
-                        value={unitManager}
-                        onValueChange={setUnitManager}
-                        placeholder="Personel seçin"
-                        emptyLabel="Personel bulunamadı"
-                      />
-                    </FieldShell>
-                  </div>
-                  <SaveBar pending={unitPending} />
-                </form>
-                {units.length ? (
-                  <ul className="mt-4 grid gap-1 text-sm sm:grid-cols-2">
-                    {units.map((u) => (
-                      <UnitRow key={u.id} unit={u} units={units} people={people} />
-                    ))}
-                  </ul>
-                ) : null}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Talep birimleri</CardTitle>
-                <CardDescription>
-                  Talep yönetimindeki birim adlarını kurumunuza göre değiştirin. Menü adı kenar çubuğunda, tam ad form ve listelerde görünür.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form action={officeNameAction} className="space-y-5">
-                  <FormStatus state={officeNameState} />
-                  <div className="grid gap-5">
-                    {REQUEST_OFFICES.map((office) => (
-                      <div key={office} className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
-                        <p className="text-muted-foreground sm:col-span-2 text-xs font-medium tracking-wide uppercase">
-                          {REQUEST_OFFICE_LABELS[office]}
-                        </p>
-                        <FieldShell
-                          id={`office-label-${office}`}
-                          label="Tam ad"
-                          required
-                          hint="Formlarda, talep kartında ve raporlarda görünen ad."
-                        >
-                          <Input
-                            id={`office-label-${office}`}
-                            name={`office_label_${office}`}
-                            defaultValue={settings.officeNames[office].label}
-                            maxLength={80}
-                          />
-                        </FieldShell>
-                        <FieldShell
-                          id={`office-nav-${office}`}
-                          label="Menü adı"
-                          hint="Kenar çubuğundaki kısa ad. Boşsa tam ad kullanılır."
-                        >
-                          <Input
-                            id={`office-nav-${office}`}
-                            name={`office_nav_${office}`}
-                            defaultValue={settings.officeNames[office].navLabel}
-                            maxLength={40}
-                          />
-                        </FieldShell>
-                      </div>
-                    ))}
-                  </div>
-                  <SaveBar pending={officeNamePending} />
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </TabsContent>
 
       <TabsContent value="ad">
         <Card>
@@ -435,7 +200,7 @@ export function SettingsForms({
             <CardTitle className="text-base">Active Directory entegrasyonu</CardTitle>
             <CardDescription>
               Kullanıcı ve grup eşlemesi için LDAP / LDAPS bağlantısı. Şifre yalnızca değiştirdiğinizde güncellenir. Bağlantı çalışınca AD güvenlik gruplarını talep kategorileriyle eşleştirmek için{" "}
-              <a href="/ayarlar/talep-gruplari" className="text-primary underline underline-offset-2">Talep grupları</a> sayfasını açın.
+              <a href="/ayarlar/yetkiler?sekme=talep" className="text-primary underline underline-offset-2">Yetki ve roller</a> sayfasını açın.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -651,161 +416,6 @@ export function SettingsForms({
         <AuditLogPanel logs={audit.logs} totals={audit.totals} />
       </TabsContent>
 
-      <TabsContent value="rbac">
-        <div className="space-y-5">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">AD grup → rol</CardTitle>
-              <CardDescription>
-                Active Directory girişi sonrası üyelik bu tabloya göre role çevrilir. Manuel kaynaklı hesaplar personel kartındaki rolü kullanır.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form action={rbacAction} className="space-y-5">
-                <FormStatus state={rbacState} />
-                <FieldShell id="default-role" label="Eşleşme yoksa AD rolü" hint="Grup eşlemesi tutmazsa AD kullanıcısına bu rol verilir. Genelde Kullanıcı.">
-                  <Select name="defaultRole" defaultValue={settings.ad.defaultRole}>
-                    <SelectTrigger className="w-full" id="default-role">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PERSONNEL_ROLES.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {PERSONNEL_ROLE_LABELS[role]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FieldShell>
-                <div className="space-y-2">
-                  {maps.map((row, index) => (
-                    <div key={`${row.group}-${index}`} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                      <Input name="mapGroup" defaultValue={row.group} placeholder="GG_BilgiGuvenligi" />
-                      <select
-                        name="mapRole"
-                        defaultValue={row.role}
-                        className="border-input h-9 rounded-md border bg-transparent px-3 text-sm"
-                      >
-                        {PERSONNEL_ROLES.map((role) => (
-                          <option key={role} value={role}>
-                            {PERSONNEL_ROLE_LABELS[role]}
-                          </option>
-                        ))}
-                      </select>
-                      <Button type="button" variant="ghost" onClick={() => setMaps((prev) => prev.filter((_, i) => i !== index))}>
-                        Sil
-                      </Button>
-                    </div>
-                  ))}
-                  <Button type="button" variant="outline" size="sm" onClick={() => setMaps((prev) => [...prev, { group: "", role: "USER" }])}>
-                    Grup eşlemesi ekle
-                  </Button>
-                </div>
-                <SaveBar pending={rbacPending} />
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Rol varsayılanı</CardTitle>
-              <CardDescription>
-                Rol matrisi başlangıç değeridir. Asıl erişim Ayarlar → Modül yetkileri sekmesindeki grup eşlemesiyle
-                yönetilir.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b">
-                    <th className="py-2 pr-3 font-medium">Modül</th>
-                    {PERSONNEL_ROLES.map((role) => (
-                      <th key={role} className="px-2 py-2 font-medium">
-                        {PERSONNEL_ROLE_LABELS[role]}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(MODULE_ROLES).map(([mod, roles]) => (
-                    <tr key={mod} className="border-b last:border-0">
-                      <td className="py-2 pr-3">{MODULE_LABELS[mod as keyof typeof MODULE_LABELS]}</td>
-                      {PERSONNEL_ROLES.map((role) => (
-                        <td key={role} className="px-2 py-2">
-                          {roles.includes(role) ? "●" : "·"}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
-        </div>
-      </TabsContent>
-
-      <TabsContent value="acl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Grup bazlı modül yetkileri</CardTitle>
-            <CardDescription>
-              Süper yönetici her birimi kendi modülüne bağlar. Grup adı AD grubu (`GG_Envanter`), rol
-              (`role:USER`) veya talep ofisi (`office:SERVIS`) olabilir. Seviyeler: görüntüle, işle, modül
-              yöneticisi. Süper yönetici her zaman tam yetkilidir.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form action={aclAction} className="space-y-5">
-              <FormStatus state={aclState} />
-              <div className="space-y-2">
-                {grants.map((row, index) => (
-                  <div key={`${row.module}-${row.group}-${index}`} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
-                    <select
-                      name="grantModule"
-                      defaultValue={row.module}
-                      className="border-input h-9 rounded-md border bg-transparent px-3 text-sm"
-                    >
-                      {ACL_MODULES.map((mod) => (
-                        <option key={mod} value={mod}>
-                          {MODULE_LABELS[mod]}
-                        </option>
-                      ))}
-                    </select>
-                    <Input name="grantGroup" defaultValue={row.group} placeholder="GG_Envanter veya role:USER" />
-                    <select
-                      name="grantLevel"
-                      defaultValue={row.level}
-                      className="border-input h-9 rounded-md border bg-transparent px-3 text-sm"
-                    >
-                      {MODULE_LEVELS.map((level) => (
-                        <option key={level} value={level}>
-                          {MODULE_LEVEL_LABELS[level]}
-                        </option>
-                      ))}
-                    </select>
-                    <Button type="button" variant="ghost" onClick={() => setGrants((prev) => prev.filter((_, i) => i !== index))}>
-                      Sil
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setGrants((prev) => [...prev, { module: "envanter", group: "", level: "VIEW" }])}
-                >
-                  Yetki satırı ekle
-                </Button>
-              </div>
-              <p className="text-muted-foreground text-xs">
-                Örnek: `GG_Envanter` → Envanter yönetimi → Modül yöneticisi. Normal kullanıcılar `role:USER` ile
-                yalnızca kendi ve birimindeki envanteri görür; ekleme/silme onaya düşer.
-              </p>
-              <SaveBar pending={aclPending} />
-            </form>
-          </CardContent>
-        </Card>
-      </TabsContent>
     </Tabs>
   );
 }

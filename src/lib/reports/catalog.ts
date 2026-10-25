@@ -1,4 +1,3 @@
-import { canAccess } from "@/lib/auth/rbac";
 import { ASSET_TYPE_LIST } from "@/lib/inventory/asset-types";
 import { CRITICALITY_LABELS, CRITICALITY_LEVELS, LIFECYCLE_STATUS_LABELS, LIFECYCLE_STATUSES } from "@/lib/inventory/constants";
 import {
@@ -334,6 +333,13 @@ export const REPORTS: ReportDef[] = [
     filters: [],
   },
   {
+    id: "yetki-matrisi",
+    title: "Yetki matrisi",
+    description: "Modül yetkileri (grup → modül → düzey), AD grubu → rol eşlemesi ve talep kategorisi → AD grubu eşlemesi (yetki inceleme kanıtı).",
+    group: "Denetim",
+    filters: [{ key: "q", label: "Arama", kind: "text", placeholder: "Grup, modül, rol…" }],
+  },
+  {
     id: "hareketler",
     title: "Audit log",
     description: "Son 200 işlem: varlık, eylem ve not.",
@@ -392,12 +398,14 @@ export const REPORT_MODULE: Record<string, string> = {
   "zafiyet-termin": "/zafiyet",
   "onay-sureleri": "/ayarlar",
   "erisim-denetimi": "/ayarlar",
+  "yetki-matrisi": "/ayarlar",
 };
 
-export function canViewReport(role: string | null | undefined, reportId: string) {
+/** `canAccessPath`: Yetki matrisine göre yol erişimi (bkz. getAccessChecker). */
+export function canViewReport(canAccessPath: (pathname: string) => boolean, reportId: string) {
   const path = REPORT_MODULE[reportId];
   if (!path) return false;
-  return canAccess(String(role ?? ""), path);
+  return canAccessPath(path);
 }
 
 export const REPORT_GROUPS = [...new Set(REPORTS.map((item) => item.group))];

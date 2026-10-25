@@ -10,9 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ASSET_TYPE_LIST } from "@/lib/inventory/asset-types";
 import { LIFECYCLE_STATUSES } from "@/lib/inventory/constants";
 import { assetDisplayName, formatDateTime } from "@/lib/inventory/format";
-import { canAccess, isRequesterOnly } from "@/lib/auth/rbac";
+import { isRequesterOnly } from "@/lib/auth/rbac";
 import { getInventoryAccess } from "@/lib/auth/inventory";
-import { getViewer } from "@/lib/auth/viewer";
+import { getAccessChecker, getViewer } from "@/lib/auth/viewer";
 import { visibleRequestWhere } from "@/lib/itil/request-scope";
 import { ITIL_PRACTICE_MAP } from "@/lib/itil/processes";
 import { getDashboardData } from "@/lib/queries";
@@ -42,7 +42,8 @@ export default async function DashboardPage() {
   );
   const canMutate = Boolean(inventory?.canDirectMutate);
   const role = String(viewer?.role ?? "");
-  const showOps = (href: string) => Boolean(role) && canAccess(role, href);
+  const accessOk = await getAccessChecker();
+  const showOps = (href: string) => Boolean(role) && accessOk(href);
   const criticalHigh = data.byCriticality.HIGH ?? 0;
   const expiringCount = data.expiring.length;
 

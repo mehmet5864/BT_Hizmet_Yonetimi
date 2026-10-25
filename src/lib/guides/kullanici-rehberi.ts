@@ -517,7 +517,7 @@ const ENTRIES: Entry[] = [
       "Önce Tanımlar sekmesinde birimleri ve süreç yöneticilerini girin.",
       "Sonra entegrasyonları açın (AD, SIEM, tarayıcı, e-posta).",
       "Yönetici onaylarını ve iş akışlarını tanımlayın.",
-      "Modül yetkileri sekmesinde hangi rolün hangi menüyü göreceğini ayarlayın.",
+      "Yetki ve roller sayfasındaki Modül yetkileri sekmesinde hangi rolün hangi menüyü göreceğini ayarlayın.",
       "Düzenli yedek alın (Yedek sekmesi).",
     ],
     itil: "Kontrol ve yönetişim: kim neyi onaylar, hangi süre hedeflenir. Ayar değişiklikleri denetim kaydına yazılır.",
@@ -557,7 +557,7 @@ export const USER_GUIDE_ILLUSTRATED: Guide = {
     {
       t: "note",
       title: "Yetki",
-      text: "Menüde göremediğiniz bir modül rolünüze kapalıdır ya da lisansınıza dahil değildir. Yöneticiden Ayarlar → Modül yetkileri bölümünü kontrol etmesini isteyin.",
+      text: "Menüde göremediğiniz bir modül rolünüze kapalıdır ya da lisansınıza dahil değildir. Yöneticiden Ayarlar → Yetki ve roller bölümünü kontrol etmesini isteyin.",
     },
 
     { t: "h1", text: "Üç çerçeve birlikte nasıl çalışır" },

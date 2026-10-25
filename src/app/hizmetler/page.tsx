@@ -5,8 +5,7 @@ import { PageHeader } from "@/components/ui-bits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ITIL_PRACTICE_MAP } from "@/lib/itil/processes";
-import { canAccess } from "@/lib/auth/rbac";
-import { getViewer } from "@/lib/auth/viewer";
+import { getAccessChecker, getViewer } from "@/lib/auth/viewer";
 import { getTranslator } from "@/lib/i18n";
 import { LiveFlow, type FlowStage } from "@/components/itil/live-flow";
 import { LiveRefresh } from "@/components/live-refresh";
@@ -20,7 +19,8 @@ export default async function HizmetlerPage() {
   const [viewer, i18n] = await Promise.all([getViewer(), getTranslator()]);
   const { t } = i18n;
   const role = String(viewer?.role ?? "");
-  const items = ITIL_PRACTICE_MAP.filter((item) => !role || canAccess(role, item.href));
+  const accessOk = await getAccessChecker();
+  const items = ITIL_PRACTICE_MAP.filter((item) => !role || accessOk(item.href));
 
   const closedInc = { notIn: ["RESOLVED", "CLOSED"] };
   const closedChg = { notIn: ["COMPLETED", "CLOSED", "REJECTED", "CANCELLED", "IMPLEMENTED"] };
@@ -48,7 +48,7 @@ export default async function HizmetlerPage() {
     { key: "vul", label: "Zafiyet", href: "/zafiyet", open: vul, total: vulAll },
     { key: "prc", label: "Süreç kayıtları", href: "/surec", open: prc, total: prcAll },
     { key: "agi", label: "Çevik işler", href: "/cevik", open: agi, total: agiAll },
-  ].filter((x) => !role || canAccess(role, x.href));
+  ].filter((x) => !role || accessOk(x.href));
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-8">

@@ -4,6 +4,9 @@ import { PERSONNEL_ROLE_LABELS, REQUEST_SEVERITY_LABELS, VULN_SEVERITY_LABELS } 
 import { getLicenseState } from "@/lib/license";
 import { prisma } from "@/lib/prisma";
 import { scopedDbForViewer } from "@/lib/auth/data-scope";
+import { getSystemSettings } from "@/lib/settings-store";
+import { MODULE_LABELS } from "@/lib/auth/rbac";
+import { MODULE_LEVEL_LABELS, MODULE_SCOPE_LABELS } from "@/lib/auth/acl";
 import { formatDateTime } from "@/lib/inventory/format";
 
 import { getReportDef } from "./catalog";
@@ -19,6 +22,7 @@ export const KPI_REPORT_IDS = [
   "zafiyet-termin",
   "onay-sureleri",
   "erisim-denetimi",
+  "yetki-matrisi",
 ] as const;
 
 const DAY = 86_400_000;
@@ -452,6 +456,36 @@ export async function buildKpiReport(id: string, filters: ReportFilters, base: B
         { label: "Lisans doluluğu", value: pct(license.used, license.maxUsers) },
       ],
       notes: ["Yetki ve erişim incelemesi için denetim kanıtı olarak kullanılabilir."],
+    };
+  }
+
+  if (id === "yetki-matrisi") {
+    const settings = await getSystemSettings();
+    const q = (filters.q ?? "").toLocaleLowerCase("tr-TR");
+    const rows: Record<string, string>[] = [];
+    const add = (tur: string, kaynak: string, hedef: string, duzey = "", kapsam = "") => rows.push({ tur, kaynak, hedef, duzey, kapsam });
+    for (const g of settings.acl.grants)
+      add("Modül yetkisi", g.group, MODULE_LABELS[g.module] ?? g.module, MODULE_LEVEL_LABELS[g.level], g.scopes?.length ? g.scopes.map((s) => MODULE_SCOPE_LABELS[s]).join(", ") : "Varsayılan kural");
+    for (const m of settings.ad.roleMaps) add("AD grubu → rol", m.group, PERSONNEL_ROLE_LABELS[m.role] ?? m.role);
+    add("AD grubu → rol", "(eşleşme yok)", PERSONNEL_ROLE_LABELS[settings.ad.defaultRole] ?? settings.ad.defaultRole, "varsayılan");
+    for (const [type, group] of Object.entries(settings.requestGroups)) if (group) add("Talep türü → AD grubu", group, type);
+    const shown = q ? rows.filter((r) => Object.values(r).some((v) => v.toLocaleLowerCase("tr-TR").includes(q))) : rows;
+    return {
+      ...head,
+      columns: [
+        { key: "tur", label: "Tür" },
+        { key: "kaynak", label: "Grup / kaynak" },
+        { key: "hedef", label: "Modül / rol / talep türü" },
+        { key: "duzey", label: "Düzey" },
+        { key: "kapsam", label: "Kapsam" },
+      ],
+      rows: shown,
+      summary: [
+        { label: "Modül yetkisi satırı", value: String(settings.acl.grants.length) },
+        { label: "AD grubu → rol satırı", value: String(settings.ad.roleMaps.length) },
+        { label: "Eşlenmiş talep türü", value: String(Object.values(settings.requestGroups).filter(Boolean).length) },
+      ],
+      notes: ["Ayarlar → Yetki ve roller sayfasındaki mevcut yapılandırmanın dökümüdür; yetki inceleme kanıtı olarak kullanılabilir."],
     };
   }
 

@@ -1,4 +1,5 @@
 import { canAccessWithAcl, hasModuleLevel, officerGroupsFor, parsePersonGroups, viewerGrantNames, type ModuleLevel } from "@/lib/auth/acl";
+import { assignedGroupsFor } from "@/lib/auth/assigned";
 import { isPersonnelRole, moduleForPath } from "@/lib/auth/rbac";
 import { getSession } from "@/lib/auth/session";
 import { handledTypesFor } from "@/lib/itil/request-groups";
@@ -21,8 +22,18 @@ export async function getViewer(): Promise<RequestViewer | null> {
     : null;
   const settings = await getSystemSettings();
   const departmentId = person?.departmentId ?? null;
+  const names = [
+    ...viewerGrantNames({ role, requestOffice, adGroups: person?.adGroups }),
+    ...officerGroupsFor(user.id, settings.officers as Record<string, string>),
+  ].map((name) => name.trim().toLocaleLowerCase("tr-TR"));
+  // Yetki matrisinde "Alt çalışan verisi" kapsamı seçilmişse birim personeli her rol için hesaplanır.
+  const needsUnit = settings.acl.grants.some(
+    (grant) => grant.scopes?.includes("UNIT") && names.includes(grant.group.trim().toLocaleLowerCase("tr-TR")),
+  );
   const unitIds =
-    role === "UNIT_MANAGER" || role === "SYSTEM_ADMIN" ? await unitPersonIds({ id: user.id, departmentId }) : [user.id];
+    role === "UNIT_MANAGER" || role === "SYSTEM_ADMIN" || needsUnit
+      ? await unitPersonIds({ id: user.id, departmentId })
+      : [user.id];
   return {
     id: user.id,
     role,
@@ -37,6 +48,7 @@ export async function getViewer(): Promise<RequestViewer | null> {
         adGroups: person?.adGroups,
       }),
       ...officerGroupsFor(user.id, settings.officers as Record<string, string>),
+      ...(role === "USER" ? await assignedGroupsFor(user.id) : []),
     ],
   };
 }
@@ -44,6 +56,13 @@ export async function getViewer(): Promise<RequestViewer | null> {
 export async function getViewerAcl() {
   const [viewer, settings] = await Promise.all([getViewer(), getSystemSettings()]);
   return { viewer, grants: settings.acl.grants };
+}
+
+/** Menü, pano ve rapor listeleri için: kullanıcı bu yola (modüle) erişebilir mi? Tek kaynak: Yetki matrisi (ACL). */
+export async function getAccessChecker(): Promise<(pathname: string) => boolean> {
+  const { viewer, grants } = await getViewerAcl();
+  if (!viewer) return () => false;
+  return (pathname) => canAccessWithAcl(grants, viewer.groups ?? [], pathname, viewer.role);
 }
 
 /** Sunucu eylemleri varsayılan olarak "İşle" düzeyi ister; yalnızca görüntüleme yetkisi yazma işlemine yetmez. */

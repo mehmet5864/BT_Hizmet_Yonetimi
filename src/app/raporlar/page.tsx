@@ -3,7 +3,7 @@ import { ListFilters } from "@/components/list-filters";
 import { ReportCard } from "@/components/report-card";
 import { EmptyState } from "@/components/ui-bits";
 import { isRequesterOnly } from "@/lib/auth/rbac";
-import { getViewer } from "@/lib/auth/viewer";
+import { getAccessChecker, getViewer } from "@/lib/auth/viewer";
 import { REPORTS, REPORT_GROUPS, canViewReport, reportWithOfficeNames } from "@/lib/reports/catalog";
 import { prisma } from "@/lib/prisma";
 import { param } from "@/lib/search-params";
@@ -15,8 +15,9 @@ export default async function ReportsPage({ searchParams }: PageProps<"/raporlar
   const params = await searchParams;
   const query = param(params, "q")?.toLocaleLowerCase("tr") ?? "";
   const viewer = await getViewer();
+  const accessOk = await getAccessChecker();
   const visible = REPORTS.filter((item) => {
-    if (!canViewReport(viewer?.role, item.id)) return false;
+    if (!canViewReport(accessOk, item.id)) return false;
     if (!query) return true;
     return `${item.title} ${item.description} ${item.group}`.toLocaleLowerCase("tr").includes(query);
   });

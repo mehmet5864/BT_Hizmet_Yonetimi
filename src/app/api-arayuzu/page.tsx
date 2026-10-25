@@ -135,6 +135,9 @@ curl -H "X-Api-Key: bth_xxxx_…" ${origin}/api/v1/envanter?limit=20`}</pre>
           <CardTitle className="text-base">Kapsamlar</CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="text-muted-foreground mb-3 text-xs">
+            Kapsam, anahtarın erişebileceği alanları sınırlar. Kayıtlar ayrıca anahtar sahibinin yetkisiyle süzülür: rol, Ayarlar → Yetki ve roller’deki modül yetkileri ve talepler için AD grubuna bağlı talep kategorileri uygulanır.
+          </p>
           <ul className="grid gap-2 sm:grid-cols-2">
             {API_SCOPES.map((scope) => (
               <li key={scope} className="rounded-md border px-3 py-2 text-sm">

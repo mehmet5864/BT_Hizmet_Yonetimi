@@ -63,7 +63,7 @@ Ayarlar → İş akışları: talep/değişiklik/yama için onay zinciri çizin,
 
 Ayarlar → Bağlantılar bölümünden girilir; her sekmede **Bağlantıyı dene** düğmesi vardır.
 
-- **Active Directory:** sunucu (FQDN/IP), port 389 (LDAP) veya 636 (LDAPS), Base DN (örn. `DC=kurum,DC=local`). Kullanıcı giriş yaptığında kendi kullanıcı adı/parolasıyla bind edilir ve `memberOf` grupları Ayarlar → Modül yetkileri eşlemesine göre role çevrilir. Servis hesabı (Bind DN/parola) yalnızca bağlantı testi içindir. Konteynerden AD sunucusuna ağ erişimi (389/636) açık olmalıdır.
+- **Active Directory:** sunucu (FQDN/IP), port 389 (LDAP) veya 636 (LDAPS), Base DN (örn. `DC=kurum,DC=local`). Kullanıcı giriş yaptığında kendi kullanıcı adı/parolasıyla bind edilir ve `memberOf` grupları Ayarlar → Yetki ve roller eşlemesine göre role çevrilir. Servis hesabı (Bind DN/parola) yalnızca bağlantı testi içindir. Konteynerden AD sunucusuna ağ erişimi (389/636) açık olmalıdır.
 - **SIEM:** adres, port (514 UDP/TCP veya 6514 TLS), biçim CEF ya da Syslog. Sunucuya ulaşılamazsa uygulama çalışmaya devam eder, hata etkinlik günlüğüne `SIEM_ERROR` yazılır.
 - **E-posta (SMTP):** 25 / 587 (STARTTLS) / 465 (SSL). Gönderim hatası kayıt işlemini engellemez (`MAIL_ERROR`).
 - **Sertifikalar:** varsayılan olarak kurum içi/kendinden imzalı sertifika kabul edilir. Sıkı doğrulama için `.env` dosyasına `INTEGRATION_TLS_STRICT=true` ekleyip `baslat-docker`'ı yeniden çalıştırın (kurum CA'sı konteynerde güvenilir olmalı).
