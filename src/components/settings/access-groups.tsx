@@ -100,7 +100,7 @@ export function AccessGroups({
         <CardHeader>
           <CardTitle className="text-base">AD güvenlik grupları</CardTitle>
           <CardDescription>
-            {adNote} Grubu sürükleyip bir role veya talep kategorisine bırakın (ya da gruba, sonra hedefe tıklayın).
+            {adNote} Talep grupları (ör. fw_admins) rol eşlemesine eklenmez: üyeler Kullanıcı rolüyle kendi taleplerini ve kategorisinin kuyruğunu görür. Grubu sürükleyip bir role veya talep kategorisine bırakın (ya da gruba, sonra hedefe tıklayın).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

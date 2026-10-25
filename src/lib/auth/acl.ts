@@ -196,6 +196,20 @@ export function defaultModuleGrants(): ModuleGrant[] {
   return grants;
 }
 
+/** Önerilen rol yetkileri: mevcut varsayılanlar + açık kapsam; bilgi güvenliği yöneticisi firma/SLA, çevik ve ITIL süreçlerinde yalnızca görür. */
+export function recommendedRoleGrants(scopedModules: ReadonlySet<AppModule>): ModuleGrant[] {
+  return defaultModuleGrants()
+    .filter((grant) => grant.group.startsWith("role:"))
+    .map((grant) => {
+      const role = grant.group.slice("role:".length);
+      const level: ModuleLevel =
+        role === "INFOSEC_MANAGER" && ["firma-sla", "cevik", "surec"].includes(grant.module) ? "VIEW" : grant.level;
+      return scopedModules.has(grant.module)
+        ? { ...grant, level, scopes: defaultScopes(role, grant.module) }
+        : { ...grant, level };
+    });
+}
+
 export const ACL_VERSION = 3;
 
 /** Eski (sürüm 1) kayıtlarda rol tabanlı yetkiler yeni varsayılanlarla değişir; AD grubu / ofis yetkileri korunur. */

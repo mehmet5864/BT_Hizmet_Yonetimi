@@ -16,6 +16,7 @@ import {
   MODULE_SCOPE_HINTS,
   MODULE_SCOPE_LABELS,
   MODULE_SCOPES,
+  recommendedRoleGrants,
   type ModuleGrant,
   type ModuleLevel,
   type ModuleScope,
@@ -125,6 +126,20 @@ export function AccessMatrix({
             <input type="hidden" name="grantScopes" value={g.scopes?.join(",") ?? ""} />
           </span>
         ))}
+
+        <div className="bg-muted/40 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs">
+          <span>Başlangıç için önerilen rol yetkilerini yükleyebilirsiniz (kaydedene kadar uygulanmaz; grup satırlarına dokunmaz).</span>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setGrants((prev) => [...prev.filter((g) => !g.group.startsWith("role:")), ...recommendedRoleGrants(SCOPED_MODULES)])
+            }
+          >
+            Önerilen yetkileri yükle
+          </Button>
+        </div>
 
         <Card>
           <CardHeader>

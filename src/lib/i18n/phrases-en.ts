@@ -1340,6 +1340,7 @@ export const EN_PHRASES: Record<string, string> = {
   "Kendi": "Own",
   "Alt çalışan": "Subordinates",
   "Talep birimi": "Request unit",
+  "Önerilen yetkileri yükle": "Load recommended permissions",
 };
 
 /** Sayı veya değişken içeren metinler için kurallar: [regex, değiştirme]. */
