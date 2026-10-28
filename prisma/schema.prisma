@@ -1283,3 +1283,12 @@ model TopologyReference {
   uploadedBy String?
   createdAt  DateTime @default(now())
 }
+
+/// Sürümlü veri taşıma kayıtları: her taşıma (prisma/data-migrations) bir kez çalışır.
+model DataMigration {
+  id         String   @id
+  name       String
+  appliedAt  DateTime @default(now())
+  durationMs Int      @default(0)
+  note       String?
+}

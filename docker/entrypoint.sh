@@ -17,6 +17,8 @@ until npx prisma db push; do
   tries=$((tries + 1))
   if [ "$tries" -ge 10 ]; then
     echo "Şema uygulanamadı. Günlüğe bakın: docker compose logs envanter"
+    echo "VERİ SİLİNMEDİ: şema değişikliği mevcut veriyle uyumsuz olduğu için uygulama başlatılmadı."
+    echo "Önceki sürüme dönmek için: geri-yukle-docker (yedekler klasöründeki son yedek). Hatayı bize iletin."
     exit 1
   fi
   echo "Yeniden deneniyor ($tries/10)…"
@@ -63,6 +65,11 @@ fi
 if [ "${SEED_DEMO_EXTRA:-false}" = "true" ] && [ -f /app/prisma/seed-org-hierarchy.ts ] && [ ! -f "${DATA_DIR}/.org-hierarchy" ]; then
   echo "Kurumsal hiyerarşi (Bakanlık > Genel Müdürlük > Daire > Şube) yükleniyor…"
   if npx tsx prisma/seed-org-hierarchy.ts; then touch "${DATA_DIR}/.org-hierarchy"; fi
+fi
+
+# Sürümlü veri taşımaları: her taşıma bir kez çalışır ve DataMigration tablosuna yazılır.
+if [ -f /app/prisma/data-migrate.ts ]; then
+  npx tsx prisma/data-migrate.ts || { echo "Veri taşıması başarısız (kritik): uygulama başlatılmadı. Yedekten dönebilirsiniz."; exit 1; }
 fi
 
 if [ -f /app/prisma/backfill-scores.ts ]; then

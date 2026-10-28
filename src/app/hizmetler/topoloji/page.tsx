@@ -5,7 +5,9 @@ import { AccessRulePanel, type RuleRow } from "@/components/topology/access-rule
 import { RelationPanel, type RelationRow } from "@/components/topology/relation-panel";
 import { ReferencePanel, type ReferenceRow } from "@/components/topology/reference-panel";
 import { ServiceSelect } from "@/components/topology/service-select";
+import { GeneralTopology, type GeneralZone } from "@/components/topology/general-topology";
 import { TopologyDiagram } from "@/components/topology/topology-diagram";
+import { TopologyViews } from "@/components/topology/topology-views";
 import { ModuleHero } from "@/components/dashboard/module-widgets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -76,6 +78,8 @@ export default async function TopologyPage({ searchParams }: { searchParams: Pro
       : Promise.resolve([]),
   ]);
 
+  // Hizmetin genel topolojideki bölgesi: DMZ anahtarına bağlıysa DMZ, değilse iç sunucu bölgesi.
+  const zone: GeneralZone = !service || !graph.nodes.length ? null : graph.nodes.some((n) => /dmz/i.test(`${n.sub ?? ""} ${n.label}`)) ? "dmz" : "internal";
   const serviceInitial = service ? { id: service.id, label: service.name, sub: service.serviceNo } : null;
   const rules: RuleRow[] = service ? service.accessRules.map((r) => ({ id: r.id, audience: r.audience, kind: r.kind, ports: r.ports, note: r.note })) : [];
   const relationRows: RelationRow[] = relations.map((r) => ({
@@ -115,7 +119,12 @@ export default async function TopologyPage({ searchParams }: { searchParams: Pro
         </CardContent>
       </Card>
 
-      <TopologyDiagram key={`${service?.id ?? "-"}`} graph={graph} name={`topoloji-${service?.name ?? "hizmet"}`} serviceId={service?.id} initialPositions={initialPositions} initialNotes={initialNotes} />
+      <TopologyViews
+        key={service?.id ?? "-"}
+        hasService={!!service}
+        service={<TopologyDiagram graph={graph} name={`topoloji-${service?.name ?? "hizmet"}`} serviceId={service?.id} initialPositions={initialPositions} initialNotes={initialNotes} />}
+        general={<GeneralTopology serviceName={service?.name} zone={zone} graph={graph} />}
+      />
 
       {service ? (
         <p className="text-muted-foreground rounded-md border p-3 text-xs leading-relaxed">

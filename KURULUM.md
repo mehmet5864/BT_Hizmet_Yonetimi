@@ -68,3 +68,10 @@ Ayarlar → Bağlantılar bölümünden girilir; her sekmede **Bağlantıyı den
 - **E-posta (SMTP):** 25 / 587 (STARTTLS) / 465 (SSL). Gönderim hatası kayıt işlemini engellemez (`MAIL_ERROR`).
 - **Sertifikalar:** varsayılan olarak kurum içi/kendinden imzalı sertifika kabul edilir. Sıkı doğrulama için `.env` dosyasına `INTEGRATION_TLS_STRICT=true` ekleyip `baslat-docker`'ı yeniden çalıştırın (kurum CA'sı konteynerde güvenilir olmalı).
 - **API:** `/api/v1` uçları ve örnekler uygulamada **API arayüzü** sayfasında; OpenAPI tanımı `/api/v1/openapi.json`.
+
+## Güncelleme ve veri koruma
+
+- Veriler klasörde değil Docker volume'larındadır (PostgreSQL, yüklemeler, lisans). Yeni zip'i açıp `guncelle-docker.bat` çalıştırmak verileri silmez. `docker compose down -v` YAZMAYIN.
+- **Otomatik yedek:** `guncelle-docker` derlemeden önce yedek alır (`yedekler` klasörü: `db-*.sql.gz`, `dosyalar-*.tar.gz`). Yedek alınamazsa güncelleme durur. Bilerek atlamak için `BT_YEDEKSIZ=1`. Eski yedekleri elle temizleyin.
+- **Şema:** Açılışta `prisma db push` yeni tablo/sütunları ekler, mevcut veriyi silmez. Veriyle uyumsuz (yıkıcı) bir değişiklik olursa uygulama açılmaz ve veri olduğu gibi kalır; `geri-yukle-docker` ile son yedeğe dönülür.
+- **Veri taşıma:** Büyük sürümlerde eski kayıtlar `prisma/data-migrations` altındaki sürümlü taşımalarla yeni yapıya getirilir. Her taşıma bir kez çalışır ve `DataMigration` tablosuna yazılır. Kural: önce yeni sütun eklenir, veri taşınır, eski sütun sonraki sürümde kaldırılır.
