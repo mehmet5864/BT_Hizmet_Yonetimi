@@ -97,6 +97,7 @@ export const ASSET_TYPE_DEFS: Record<AssetTypeKey, AssetTypeDef> = {
           "servedApplication",
           "brand",
           "model",
+          "serviceKind",
         ],
       },
       NETWORK_GROUP,
@@ -187,7 +188,7 @@ export const ASSET_TYPE_DEFS: Record<AssetTypeKey, AssetTypeDef> = {
     groups: [
       {
         title: "Tanımlayıcı bilgiler",
-        fields: ["formFactor", "stockNo", { id: "name", label: "Yazılım / lisans adı", required: true }, "version"],
+        fields: ["formFactor", "stockNo", { id: "name", label: "Yazılım / lisans adı", required: true }, "version", "serviceKind"],
       },
       {
         title: "Çalıştığı altyapı",
@@ -221,7 +222,7 @@ export const ASSET_TYPE_DEFS: Record<AssetTypeKey, AssetTypeDef> = {
     groups: [
       {
         title: "Tanımlayıcı bilgiler",
-        fields: ["stockNo", { id: "name", label: "Uygulama adı", required: true }, "version", "appEnvironment", "appTechnology"],
+        fields: ["stockNo", { id: "name", label: "Uygulama adı", required: true }, "version", "appEnvironment", "appTechnology", "serviceKind"],
       },
       {
         title: "Çalıştığı sunucular",
@@ -300,6 +301,7 @@ export const ASSET_TYPE_DEFS: Record<AssetTypeKey, AssetTypeDef> = {
           "deviceId",
           "brand",
           "model",
+          "serviceKind",
         ],
       },
       NETWORK_GROUP,

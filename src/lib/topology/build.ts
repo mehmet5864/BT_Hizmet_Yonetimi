@@ -1,3 +1,4 @@
+import { serviceKindOf } from "@/lib/inventory/service-kinds";
 import { CRITICALITY_LABELS, LIFECYCLE_STATUS_LABELS } from "@/lib/inventory/constants";
 import { prisma } from "@/lib/prisma";
 import { ASSET_TYPE_TR, formatPorts, relationEdgeLabel } from "./labels";
@@ -10,7 +11,7 @@ import {
   type TopoShape,
 } from "./types";
 
-const FIREWALL_RE = /firewall|fortigate|fortinet|palo ?alto|check ?point|\basa\b|pfsense|sophos|\bfw\b|güvenlik duvar|guvenlik duvar|waf/i;
+const FIREWALL_RE = /firewall|fire ?wall|ngfw|\butm\b|next[- ]?gen|fortigate|fortinet|\bfg-?\d|palo ?alto|\bpa-?\d{3,4}|check ?point|\basa\b|\bftd\b|firepower|\bsrx\b|pfsense|sophos|watchguard|stormshield|hillstone|\busg\b|\bfw\b|fw-?\d|güvenlik duvar|guvenlik duvar|waf/i;
 const DB_RE = /\bsql\b|mssql|oracle|postgres|mysql|mariadb|mongo|veritaban|database/i;
 const STORAGE_RE = /\bsan\b|storage|depolama|\bnas\b|netapp|dell ?emc|powerstore|powervault|3par|nimble|synology|qnap/i;
 const LB_RE = /load ?balanc|yük deng|yuk deng|\bf5\b|big-?ip|netscaler|haproxy|\blb\b|\badc\b/i;
@@ -29,6 +30,7 @@ type AssetRow = {
   version: string | null;
   appTechnology: string | null;
   servedApplication: string | null;
+  serviceKind?: string | null;
   criticality: string;
   status: string;
   department?: { name: string } | null;
@@ -47,13 +49,16 @@ const ASSET_SELECT = {
   version: true,
   appTechnology: true,
   servedApplication: true,
+  serviceKind: true,
   criticality: true,
   status: true,
   department: { select: { name: true } },
   _count: { select: { vulnerabilities: { where: { status: "OPEN" } } } },
 } as const;
 
-export function assetShape(a: Pick<AssetRow, "assetType" | "name" | "brand" | "model" | "appTechnology" | "servedApplication">): TopoShape {
+export function assetShape(a: Pick<AssetRow, "assetType" | "name" | "brand" | "model" | "appTechnology" | "servedApplication"> & { serviceKind?: string | null }): TopoShape {
+  const kindShape = serviceKindOf(a.serviceKind)?.shape;
+  if (kindShape) return kindShape;
   const text = [a.name, a.brand, a.model, a.appTechnology, a.servedApplication].filter(Boolean).join(" ");
   switch (a.assetType) {
     case "NETWORK_DEVICE":

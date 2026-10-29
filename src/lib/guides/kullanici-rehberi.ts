@@ -107,6 +107,7 @@ const ENTRIES: Entry[] = [
       "Yeni varlık ekleyin; zorunlu alanlar etiket, tür ve ofis/birimdir.",
       "Zimmet ekranında varlığı kişiye verin; teslim tutanağı kayda geçer.",
       "Silme isteği açın; sorumlu Onaylar sayfasından karar verir.",
+      "Üzerinden talep açılacak kayıtlarda (güvenlik duvarı, NAC, aktif dizin, sanallaştırma, WAF, SIEM, yedekleme vb.) “Hizmet / sunucu türü” alanını seçin. Talep formundaki “… (envanter)” listeleri bu türe göre dolar; alan boşsa ad, marka ve modelden tahmin edilir. Toplu içe aktarmada “Hizmet / sunucu türü” sütunu vardır.",
       "Çok sayıda cihaz için “Toplu içe aktarma” şablonunu kullanın.",
       "Zafiyet taramasında IP/cihaz adı eşleşirse bulgu bu karta bağlanır.",
     ],

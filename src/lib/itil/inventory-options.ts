@@ -2,6 +2,7 @@ import type { FieldDef } from "@/lib/inventory/fields";
 import { prisma } from "@/lib/prisma";
 import { assetLabel, assetShape } from "@/lib/topology/build";
 import { ASSET_TYPE_TR } from "@/lib/topology/labels";
+import { serviceKindOf } from "@/lib/inventory/service-kinds";
 
 /** Ürün / platform seçimi yapılan talep alanları: seçenekler yalnızca envanterde kayıtlı varlıklardan gelir. */
 export const INVENTORY_FIELD_IDS = new Set([
@@ -28,6 +29,7 @@ type Candidate = {
   appTechnology: string | null;
   servedApplication: string | null;
   ipAddress: string | null;
+  serviceKind?: string | null;
 };
 
 function tokensOf(field: FieldDef) {
@@ -49,6 +51,9 @@ function hay(a: Candidate) {
 const MAIL_RE = /mail|mimecast|proofpoint|ironport|barracuda|spam|posta/i;
 
 function matches(field: FieldDef, a: Candidate) {
+  // Envanterde hizmet / sunucu türü açıkça girildiyse yalnızca ona bakılır (tahmin yapılmaz).
+  const kind = serviceKindOf(a.serviceKind);
+  if (kind) return kind.fields.includes(field.id);
   switch (field.id) {
     case "fwVendor":
       return a.assetType === "NETWORK_DEVICE" && assetShape(a) === "firewall";
@@ -84,7 +89,7 @@ export async function withInventoryOptions<T extends FieldDef>(fields: T[]): Pro
     where: { assetType: { in: ASSET_TYPES }, status: { not: "RETIRED" } },
     orderBy: { name: "asc" },
     take: 3000,
-    select: { id: true, name: true, stockNo: true, assetType: true, brand: true, model: true, appTechnology: true, servedApplication: true, ipAddress: true },
+    select: { id: true, name: true, stockNo: true, assetType: true, brand: true, model: true, appTechnology: true, servedApplication: true, ipAddress: true, serviceKind: true },
   })) as Candidate[];
   return fields.map((field) => {
     if (!INVENTORY_FIELD_IDS.has(field.id)) return field;
@@ -104,7 +109,7 @@ export async function inventoryDisplayValues(fields: FieldDef[], extras: Record<
   if (!ids.length) return {} as Record<string, string>;
   const rows = (await prisma.asset.findMany({
     where: { id: { in: ids } },
-    select: { id: true, name: true, stockNo: true, assetType: true, brand: true, model: true, appTechnology: true, servedApplication: true, ipAddress: true },
+    select: { id: true, name: true, stockNo: true, assetType: true, brand: true, model: true, appTechnology: true, servedApplication: true, ipAddress: true, serviceKind: true },
   })) as Candidate[];
   const byId = new Map(rows.map((a) => [a.id, optionLabel(a)]));
   const out: Record<string, string> = {};

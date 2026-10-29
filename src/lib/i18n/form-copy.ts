@@ -595,6 +595,7 @@ export const FORM_COPY: Record<Locale, FormBundle> = {
       status: { label: "Status" },
       stockNo: { label: "Stock no." },
       serialNo: { label: "Serial no." },
+      serviceKind: { label: "Service / server type", hint: "Select for records that requests can be raised against (firewall, NAC, Active Directory, virtualization …). Request form product lists are filled from this; if left empty it is guessed from name, brand and model." },
       appEnvironment: { label: "Environment", hint: "The environment the application runs in." },
       appTechnology: { label: "Technology / infrastructure", placeholder: ".NET + MSSQL", hint: "Technical summary such as language, framework and database." },
       appUserCount: { label: "User count", placeholder: "420", hint: "Approximate number of active users." },

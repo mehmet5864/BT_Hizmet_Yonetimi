@@ -25,6 +25,7 @@ const NULLABLE_COLUMNS = [
   "appUserCount",
   "appRto",
   "appTechnology",
+  "serviceKind",
   "name",
   "deviceId",
   "brand",

@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 
 import { ASSET_TYPE_DEFS, ASSET_TYPE_LIST } from "@/lib/inventory/asset-types";
+import { SERVICE_KINDS } from "@/lib/inventory/service-kinds";
 import {
   CRITICALITY_LABELS,
   CRITICALITY_LEVELS,
@@ -31,6 +32,7 @@ export const BULK_COLUMNS = [
   { key: "ram", header: "RAM", width: 10 },
   { key: "disk", header: "Disk", width: 16 },
   { key: "servedApplication", header: "Hizmet verdiği uygulama", width: 24 },
+  { key: "serviceKind", header: "Hizmet / sunucu türü", width: 26 },
   { key: "owner", header: "Sahibi", width: 22, required: true },
   { key: "department", header: "Birim", width: 28 },
   { key: "criticality", header: "Kritiklik", width: 12 },
@@ -90,6 +92,8 @@ export function parseLocationCode(value: string) {
   }
   return result;
 }
+
+const SERVICE_KIND_LABELS: Record<string, string> = Object.fromEntries(SERVICE_KINDS.map((k) => [k.value, k.label]));
 
 function matchLabel<T extends string>(value: string, labels: Record<T, string>, keys: readonly T[]): T | null {
   const n = normalize(value);
@@ -337,6 +341,7 @@ export async function importInventoryWorkbook(buffer: Buffer) {
           ram: values.ram || null,
           disk: values.disk || null,
           servedApplication: values.servedApplication || null,
+          serviceKind: matchLabel(values.serviceKind, SERVICE_KIND_LABELS, SERVICE_KINDS.map((k) => k.value)),
           ownerId: owner.id,
           departmentId: department?.id ?? owner.departmentId ?? null,
           criticality: matchLabel(values.criticality, CRITICALITY_LABELS, CRITICALITY_LEVELS) ?? "MEDIUM",

@@ -1,3 +1,4 @@
+import { SERVICE_KINDS } from "./service-kinds";
 import {
   CRITICALITY_LABELS,
   CRITICALITY_LEVELS,
@@ -149,6 +150,14 @@ export const FIELD_CATALOG = {
   supportEndDate: { id: "supportEndDate", label: "Bakım/Destek bitiş tarihi", kind: "date", row: "bakim", hint: "60 gün kala ana sayfada uyarılır." },
   transactionDate: { id: "transactionDate", label: "İşlem tarihi", kind: "date", hint: "Zimmet, teslim veya son işlem günü." },
   description: { id: "description", label: "Açıklama", kind: "textarea", fullWidth: true, hint: "Seri no, özel not veya kullanım bilgisi." },
+  serviceKind: {
+    id: "serviceKind",
+    label: "Hizmet / sunucu türü",
+    kind: "select",
+    options: SERVICE_KINDS.map((k) => ({ value: k.value, label: k.label })),
+    fullWidth: true,
+    hint: "Üzerinden talep açılabilecek kayıtlar için seçin (güvenlik duvarı, NAC, aktif dizin, sanallaştırma …). Talep formundaki ürün listeleri buna göre dolar; boş bırakırsanız ad, marka ve modelden tahmin edilir.",
+  },
   appEnvironment: { id: "appEnvironment", label: "Ortam", kind: "select", row: "uyg", options: opt(APP_ENVIRONMENT_LABELS, APP_ENVIRONMENTS), hint: "Uygulamanın çalıştığı ortam." },
   appTechnology: { id: "appTechnology", label: "Teknoloji / altyapı", kind: "text", row: "uyg", placeholder: ".NET + MSSQL", hint: "Dil, çatı, veritabanı gibi teknik özet." },
   appUrl: { id: "appUrl", label: "Erişim adresi (URL)", kind: "text", row: "uyg2", placeholder: "https://ebys.kurum.local", hint: "Kullanıcıların uygulamaya eriştiği adres." },

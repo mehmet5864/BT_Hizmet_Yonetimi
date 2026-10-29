@@ -28,6 +28,8 @@ model Asset {
   appUserCount   String?
   appRto         String?
   appTechnology  String?
+  /// Hizmet / sunucu türü (FIREWALL, NAC, ACTIVE_DIRECTORY …): talep formundaki ürün listelerini belirler; boşsa otomatik tanıma
+  serviceKind    String?
   name    String?
   deviceId String?
 
