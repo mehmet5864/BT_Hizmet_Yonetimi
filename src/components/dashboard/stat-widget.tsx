@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { RingGauge } from "@/components/dashboard/charts";
 import { CountUp } from "@/components/dashboard/count-up";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -40,12 +41,10 @@ export function StatWidget({
             </p>
             <p className="text-sm font-medium">{label}</p>
             {hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
-            {typeof bar === "number" ? (
-              <div className="bg-muted mt-2 h-1.5 overflow-hidden rounded-full">
-                <div className="widget-bar h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, bar))}%` }} />
-              </div>
-            ) : null}
           </div>
+          {typeof bar === "number" ? (
+            <RingGauge value={bar} color={tone === "danger" ? "#dc2626" : tone === "warning" ? "#f59e0b" : tone === "ok" ? "#16a34a" : "#2563eb"} />
+          ) : null}
         </CardContent>
       </Card>
     </Link>

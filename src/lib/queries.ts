@@ -196,6 +196,43 @@ export async function getDashboardData(scope?: {
     prisma.catalogService.count({ where: { status: "ACTIVE" } }).catch(() => 0),
   ]);
 
+  // Son 6 ay: talep, olay ve değişiklik kayıtlarının aylık sayısı (koordinat düzlemi grafiği için)
+  const trendStart = new Date();
+  trendStart.setDate(1);
+  trendStart.setHours(0, 0, 0, 0);
+  trendStart.setMonth(trendStart.getMonth() - 5);
+  const monthKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}`;
+  const MONTHS_TR = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+  const buckets = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(trendStart);
+    d.setMonth(trendStart.getMonth() + i);
+    return { key: monthKey(d), label: MONTHS_TR[d.getMonth()] };
+  });
+  const [reqDates, incDates, chgDates] = await Promise.all([
+    prisma.serviceRequest.findMany({ where: { ...requestWhere, createdAt: { gte: trendStart } }, select: { createdAt: true }, take: 20000 }).catch(() => []),
+    db.incident.findMany({ where: { createdAt: { gte: trendStart }, ...(scope?.ownerId ? { requesterId: scope.ownerId } : {}) }, select: { createdAt: true }, take: 20000 }).catch(() => []),
+    db.changeRecord.findMany({ where: { createdAt: { gte: trendStart }, ...(scope?.ownerId ? { requesterId: scope.ownerId } : {}) }, select: { createdAt: true }, take: 20000 }).catch(() => []),
+  ]);
+  const countBy = (rows: { createdAt: Date }[]) => buckets.map((b) => rows.filter((r) => monthKey(new Date(r.createdAt)) === b.key).length);
+  const trend = {
+    labels: buckets.map((b) => b.label),
+    series: [
+      { name: "Talep", values: countBy(reqDates as { createdAt: Date }[]) },
+      { name: "Olay", values: countBy(incDates as { createdAt: Date }[]) },
+      { name: "Değişiklik", values: countBy(chgDates as { createdAt: Date }[]) },
+    ],
+  };
+
+  // Dikkat gerektirenler (genel bakış)
+  const now = new Date();
+  const [overdueIncidents, criticalVulns, pendingApprovals, expiredSupport] = await Promise.all([
+    db.incident.count({ where: { status: { in: ["OPEN", "INVESTIGATING", "CONTAINED"] }, resolveDueAt: { lt: now }, ...(scope?.ownerId ? { requesterId: scope.ownerId } : {}) } }).catch(() => 0),
+    db.vulnerability.count({ where: { severity: "CRITICAL", status: "OPEN", ...(scope?.ownerId ? { ownerId: scope.ownerId } : {}) } }).catch(() => 0),
+    prisma.inventoryApproval.count({ where: { status: "PENDING" } }).catch(() => 0),
+    prisma.asset.count({ where: { ...assetWhere, supportEndDate: { lt: now } } }).catch(() => 0),
+  ]);
+  const attention = { overdueIncidents, criticalVulns, pendingApprovals, expiredSupport };
+
   return {
     total,
     byType: Object.fromEntries(byType.map((row) => [row.assetType, row._count._all])),
@@ -210,6 +247,8 @@ export async function getDashboardData(scope?: {
     openIncidents,
     peopleCount,
     catalogActive,
+    trend,
+    attention,
   };
 }
 

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Clock3, Inbox, Plus, ShieldAlert, Ticket, Timer } from "lucide-react";
 
+import { DistributionCard } from "@/components/dashboard/module-widgets";
 import { StatWidget } from "@/components/dashboard/stat-widget";
 import { StatusBadge } from "@/components/itil/status-badge";
 import { EmptyState, PageHeader } from "@/components/ui-bits";
@@ -19,6 +20,8 @@ import { officeLabel, type OfficeNames } from "@/lib/itil/office-names";
 import { formatDate } from "@/lib/inventory/format";
 import type { getRequestDashboard } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+
+const STATUS_COLORS: Record<string, string> = { OPEN: "#2563eb", IN_PROGRESS: "#f59e0b", WAITING: "#7c3aed", DONE: "#16a34a", REJECTED: "#dc2626", CANCELLED: "#94a3b8" };
 
 type Dashboard = Awaited<ReturnType<typeof getRequestDashboard>>;
 
@@ -177,6 +180,24 @@ export function RequestDashboard({
           hint={TICKET_STATUS_LABELS.REJECTED}
           href="/talepler"
           tone={data.rejected > 0 ? "danger" : "default"}
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <DistributionCard
+          title="Durum dağılımı"
+          items={TICKET_STATUSES.map((status) => ({ label: TICKET_STATUS_LABELS[status], value: data.byStatus[status] ?? 0, color: STATUS_COLORS[status] })).filter((i) => i.value > 0)}
+        />
+        <DistributionCard
+          title="Birim (şube) dağılımı"
+          items={visibleOffices.map((office) => ({ label: officeLabel(office, officeNames), value: data.byOffice[office] ?? 0 })).filter((i) => i.value > 0)}
+        />
+        <DistributionCard
+          title="Talep türleri (ilk 6)"
+          items={ALL_REQUEST_TYPES.map((item) => ({ label: item.label, value: data.byType[item.key] ?? 0 }))
+            .filter((i) => i.value > 0)
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 6)}
         />
       </div>
 

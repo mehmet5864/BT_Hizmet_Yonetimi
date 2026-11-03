@@ -19,6 +19,9 @@ import { assetLabel, buildServiceTopology } from "@/lib/topology/build";
 
 export const dynamic = "force-dynamic";
 
+/** Genel topolojide hizmeti gösterme (ikinci sekme) şimdilik kapalı; açmak için true yapın. */
+const GENERAL_TOPOLOGY_ENABLED = false;
+
 export default async function TopologyPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const viewer = await getViewer();
   if (!viewer || !canUseTopology(viewer.role)) redirect(viewer ? "/yetkisiz" : "/giris");
@@ -119,12 +122,16 @@ export default async function TopologyPage({ searchParams }: { searchParams: Pro
         </CardContent>
       </Card>
 
-      <TopologyViews
-        key={service?.id ?? "-"}
-        hasService={!!service}
-        service={<TopologyDiagram graph={graph} name={`topoloji-${service?.name ?? "hizmet"}`} serviceId={service?.id} initialPositions={initialPositions} initialNotes={initialNotes} />}
-        general={<GeneralTopology serviceName={service?.name} zone={zone} graph={graph} />}
-      />
+      {GENERAL_TOPOLOGY_ENABLED ? (
+        <TopologyViews
+          key={service?.id ?? "-"}
+          hasService={!!service}
+          service={<TopologyDiagram graph={graph} name={`topoloji-${service?.name ?? "hizmet"}`} serviceId={service?.id} initialPositions={initialPositions} initialNotes={initialNotes} />}
+          general={<GeneralTopology serviceName={service?.name} zone={zone} graph={graph} />}
+        />
+      ) : (
+        <TopologyDiagram key={service?.id ?? "-"} graph={graph} name={`topoloji-${service?.name ?? "hizmet"}`} serviceId={service?.id} initialPositions={initialPositions} initialNotes={initialNotes} />
+      )}
 
       {service ? (
         <p className="text-muted-foreground rounded-md border p-3 text-xs leading-relaxed">
