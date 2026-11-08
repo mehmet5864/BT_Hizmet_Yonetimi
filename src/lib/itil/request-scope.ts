@@ -8,7 +8,6 @@ export const OFFICE_HANDLER_ROLES = [
   "UNIT_MANAGER",
   "SENIOR_MANAGER",
   "INFOSEC_MANAGER",
-  "SUPER_ADMIN",
 ] as const;
 
 export function isRequestOffice(value: string | null | undefined): value is RequestOffice {
@@ -30,7 +29,10 @@ export function handlerOffices(input: {
   /** Yetki matrisinde Talep yönetimi için açık kapsam seçildiyse rol kuralı yerine o geçerlidir. */
   requestScopes?: ModuleScope[] | null;
 }): RequestOffice[] | "ALL" {
-  if (input.role === "SUPER_ADMIN") return "ALL";
+  // Süper yönetici talep içeriğini görmez ve kuyruğa girmez (görev ayrılığı).
+  if (input.role === "SUPER_ADMIN") return [];
+  // Supervisor (denetmen) tüm talepleri görür; işlem yetkisi yetki matrisinde (Gör) engellidir.
+  if (input.role === "SUPERVISOR") return "ALL";
   if (input.requestScopes?.length) {
     if (input.requestScopes.includes("ALL")) return "ALL";
     return input.requestScopes.includes("OFFICE") && isRequestOffice(input.requestOffice) ? [input.requestOffice] : [];
@@ -74,6 +76,8 @@ export type RequestViewer = {
   unitPersonIds?: string[];
   /** Yetki matrisindeki Talep yönetimi kapsamı (yoksa rol kuralı). */
   requestScopes?: ModuleScope[] | null;
+  /** Etkin ITIL süreç görevleri (elle + AD grubu eşlemesi). */
+  processRoles?: string[];
 };
 
 function ownRequesters(user: RequestViewer) {

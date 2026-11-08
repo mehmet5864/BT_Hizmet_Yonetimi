@@ -17,6 +17,8 @@ export type SessionUser = {
   title: string | null;
   adUsername: string | null;
   requestOffice?: RequestOffice | null;
+  /** true ise parola değiştirilmeden başka sayfa açılmaz (yerleşik hesabın ilk girişi). */
+  mustChangePassword?: boolean;
 };
 
 let productionFallbackSecret = "";
@@ -78,6 +80,7 @@ function sanitizeUser(raw: unknown): SessionUser | null {
       const office = typeof value.requestOffice === "string" ? value.requestOffice : null;
       return isRequestOffice(office) ? office : null;
     })(),
+    mustChangePassword: value.mustChangePassword === true,
   };
 }
 

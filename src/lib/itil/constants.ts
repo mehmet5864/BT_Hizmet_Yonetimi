@@ -4,19 +4,29 @@ export const PERSONNEL_ROLES = [
   "UNIT_MANAGER",
   "SENIOR_MANAGER",
   "INFOSEC_MANAGER",
+  "SUPERVISOR",
   "SUPER_ADMIN",
 ] as const;
 
 export type PersonnelRole = (typeof PERSONNEL_ROLES)[number];
 
+/**
+ * Sade rol modeli (5 rol): Süper Admin, ServisAdmin, User, Manager, Supervisor.
+ * Saklanan değerler geriye uyumlu kalır; eski değerler yeni adlarla gösterilir.
+ */
 export const PERSONNEL_ROLE_LABELS: Record<PersonnelRole, string> = {
-  USER: "Kullanıcı",
-  SYSTEM_ADMIN: "Sistem yöneticisi",
-  UNIT_MANAGER: "Birim amiri",
-  SENIOR_MANAGER: "Üst amir",
-  INFOSEC_MANAGER: "Bilgi güvenliği yöneticisi",
-  SUPER_ADMIN: "Süper yönetici",
+  USER: "User (kullanıcı)",
+  UNIT_MANAGER: "Manager (amir)",
+  SYSTEM_ADMIN: "ServisAdmin (talep karşılayan)",
+  SUPERVISOR: "Supervisor (denetmen, salt okunur)",
+  SUPER_ADMIN: "Süper Admin (platform)",
+  // Eski roller: yeni atamada sunulmaz, mevcut sahipleri çalışmaya devam eder.
+  SENIOR_MANAGER: "Manager (üst amir) — eski",
+  INFOSEC_MANAGER: "ServisAdmin (bilgi güvenliği) — eski",
 };
+
+/** Yeni atamada sunulan roller. Süper Admin yalnızca yerleşik hesaptır; eski roller yalnızca mevcut sahiplerinde görünür. */
+export const ASSIGNABLE_ROLES = ["USER", "UNIT_MANAGER", "SYSTEM_ADMIN", "SUPERVISOR"] as const satisfies readonly PersonnelRole[];
 
 export const TICKET_STATUSES = [
   "OPEN",
@@ -141,7 +151,7 @@ export function canApproveProblemAssignment(
   infosecManagerId?: string | null,
   extraOfficerIds: (string | null | undefined)[] = [],
 ) {
-  if (role === "SUPER_ADMIN" || role === "INFOSEC_MANAGER") return true;
+  if (role === "INFOSEC_MANAGER") return true;
   const allowed = [infosecManagerId, ...extraOfficerIds].filter((id): id is string => Boolean(id));
   return Boolean(viewerId && allowed.includes(viewerId));
 }

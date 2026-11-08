@@ -38,6 +38,14 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", pathname);
 
+  // İlk giriş parolası değiştirilene kadar yalnızca parola değiştirme sayfası açılır.
+  if (session?.mustChangePassword && !isPublic && !pathname.startsWith("/profilim/sifre")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/profilim/sifre";
+    url.search = "";
+    return withSecurity(NextResponse.redirect(url), pathname);
+  }
+
   if (session && pathname.startsWith("/ayarlar") && session.role !== "SUPER_ADMIN") {
     const url = request.nextUrl.clone();
     url.pathname = "/yetkisiz";

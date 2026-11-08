@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-const ALL_LOG_ROLES = new Set(["SUPER_ADMIN", "SYSTEM_ADMIN", "INFOSEC_MANAGER", "SENIOR_MANAGER"]);
+const ALL_LOG_ROLES = new Set(["SUPER_ADMIN", "SYSTEM_ADMIN", "INFOSEC_MANAGER", "SENIOR_MANAGER", "SUPERVISOR"]);
 
 export function canSeeAllActivity(role?: string | null) {
   return Boolean(role && ALL_LOG_ROLES.has(role));

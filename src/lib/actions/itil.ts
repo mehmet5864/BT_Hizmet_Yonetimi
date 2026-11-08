@@ -71,14 +71,21 @@ export async function savePerson(_prev: ActionState, formData: FormData): Promis
   if (!fullName) return { ok: false, message: "Ad soyad zorunludur." };
 
   const role = text(formData, "role") ?? "USER";
-  if (!isPersonnelRole(role) || !canAssignRole(access.viewer.role, role)) {
+  const existing = id
+    ? await prisma.person.findUnique({ where: { id }, select: { role: true, roleSource: true, isBuiltin: true } })
+    : null;
+  if (id && !existing) return { ok: false, message: "Personel bulunamadı." };
+  // Mevcut süper yöneticinin kaydı düzenlenirken rol değişmediyse atama denetimi gerekmez.
+  const keepsSuper = existing?.role === "SUPER_ADMIN" && role === "SUPER_ADMIN";
+  if (!isPersonnelRole(role) || (!keepsSuper && !canAssignRole(access.viewer.role, role))) {
     return { ok: false, message: "Bu rolü atama yetkiniz yok." };
   }
-  if (id) {
-    const existing = await prisma.person.findUnique({ where: { id }, select: { role: true } });
-    if (!existing) return { ok: false, message: "Personel bulunamadı." };
+  if (existing) {
     if (!canManagePerson(access.viewer.role, existing.role)) {
       return { ok: false, message: "Bu personeli düzenleme yetkiniz yok." };
+    }
+    if (id === access.viewer.id && existing.role !== role) {
+      return { ok: false, message: "Kendi rolünüzü değiştiremezsiniz." };
     }
   }
 
@@ -87,6 +94,9 @@ export async function savePerson(_prev: ActionState, formData: FormData): Promis
   const roleSource = text(formData, "roleSource") ?? "MANUAL";
   if (!(ROLE_SOURCES as readonly string[]).includes(roleSource)) {
     return { ok: false, message: "Yetki kaynağı geçersiz." };
+  }
+  if (existing?.isBuiltin && (role !== "SUPER_ADMIN" || roleSource !== "MANUAL")) {
+    return { ok: false, message: "Yerleşik süper yönetici hesabının rolü ve yetki kaynağı değiştirilemez." };
   }
 
   const data = {
@@ -313,7 +323,7 @@ export async function saveChange(_prev: ActionState, formData: FormData): Promis
     return { ok: false, message: "Yüksek riskli veya acil değişiklik tamamlanırken uygulama sonrası inceleme notu zorunludur." };
   }
   if (existing && existing.status !== statusChecked) {
-    const isSuper = access.viewer.role === "SUPER_ADMIN";
+    const isSuper = false; // Süper yönetici içerik kaydında işlem yapamaz; onay kurallarında istisna yok.
     if (existing.status === "REJECTED" && ["APPROVED", "IN_PROGRESS", "COMPLETED"].includes(statusChecked) && !isSuper) {
       return { ok: false, message: "Reddedilen değişiklik önce yeniden onaya (Beklemede) alınmalıdır." };
     }

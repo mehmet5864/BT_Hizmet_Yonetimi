@@ -72,6 +72,11 @@ if [ -f /app/prisma/data-migrate.ts ]; then
   npx tsx prisma/data-migrate.ts || { echo "Veri taşıması başarısız (kritik): uygulama başlatılmadı. Yedekten dönebilirsiniz."; exit 1; }
 fi
 
+# Yerleşik süper yönetici (BTHS_Admin): parola .env içindeki BTHS_ADMIN_PASSWORD'den; hesap varsa parolaya dokunulmaz.
+if [ -f /app/prisma/ensure-superadmin.ts ]; then
+  npx tsx prisma/ensure-superadmin.ts || echo "Yerleşik süper yönetici adımı atlandı."
+fi
+
 if [ -f /app/prisma/backfill-scores.ts ]; then
   npx tsx prisma/backfill-scores.ts || echo "Geriye dönük puanlama atlandı."
 fi

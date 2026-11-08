@@ -119,7 +119,7 @@ export async function dispatchApi(request: Request, method: string, path: string
 }
 
 async function assetWhereFor(actor: ApiActor) {
-  if (isServiceActor(actor) || actor.viewer.role === "SUPER_ADMIN") return {};
+  if (isServiceActor(actor)) return {};
   const settings = await getSystemSettings();
   return visibleAssetWhere(actor.viewer, settings.acl.grants);
 }
@@ -532,7 +532,7 @@ async function handlePendingApprovals(request: Request) {
   const auth = await requireApiScope(request, "talepler:read");
   if (auth.error) return auth.error;
   if (isServiceActor(auth.actor) || !auth.actor.viewer.id) return apiError("Bu uç için personele bağlı anahtar veya oturum gerekir.", 403);
-  const rows = await listPendingFor(auth.actor.viewer.id, auth.actor.viewer.role === "SUPER_ADMIN");
+  const rows = await listPendingFor(auth.actor.viewer.id, false);
   return apiOk(rows, 200, { count: rows.length });
 }
 

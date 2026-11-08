@@ -1,6 +1,6 @@
 # BT Hizmet Yönetimi
 
-Kurumsal BT varlık (ITAM), konfigürasyon (CMDB) ve ITIL hizmet yönetimi. Sürüm **1.0.0**.
+Kurumsal BT varlık (ITAM), konfigürasyon (CMDB) ve ITIL hizmet yönetimi. Sürüm **1.1.0**.
 
 Arayüz dilleri: Türkçe (varsayılan), İngilizce, Arapça, İspanyolca, Azerbaycan. Dil, sağ üstteki bayraklardan seçilir; menü formlarındaki alan adları ve seçenekler de seçilen dile uyar.
 

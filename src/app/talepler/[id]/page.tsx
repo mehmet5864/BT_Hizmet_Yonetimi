@@ -64,8 +64,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
   const managedOffices = await officesManagedBy(viewer.id);
   const canApproveWaiting =
     request.status === "WAITING" &&
-    (viewer.role === "SUPER_ADMIN" ||
-      request.requestingManagerId === viewer.id ||
+    (request.requestingManagerId === viewer.id ||
       request.handlingManagerId === viewer.id ||
       (isRequestOffice(request.office) && managedOffices.includes(request.office)));
 

@@ -1,4 +1,4 @@
-# BT Hizmet Yönetimi 1.0.0 — kurulum
+# BT Hizmet Yönetimi 1.1.0 — kurulum
 
 Docker Desktop ile kurulur (Node.js gerekmez). Veritabanı **PostgreSQL 16**'dır; ayrı bir konteyner olarak otomatik kalkar.
 Sunucu (on-premise) kurulumu için **[ON-PREMISE-KURULUM.md](ON-PREMISE-KURULUM.md)**. Değişiklik listesi: **[SURUM.md](SURUM.md)**.
@@ -32,6 +32,7 @@ Sonraki açılış: `./baslat-docker.sh`
 - `bt-postgres-v4` (PostgreSQL 16, volume `pgdata`) ve `envanter-yonetim-v4` (uygulama) konteynerleri
 - Örnek personel, envanter, talep ve olay kayıtları (ilk kurulumda bir kez; `SEED_ON_START=false` ile kapatılır)
 - `.env` ilk kurulumda üretilir (`SESSION_SECRET`, `POSTGRES_PASSWORD`); var olan değerlere dokunulmaz. Dosyayı paylaşmayın.
+- **Yerleşik süper yönetici (`BTHS_Admin`):** `.env` dosyasına `BTHS_ADMIN_PASSWORD=<en az 12 karakter>` satırını ekleyip `guncelle-docker`'ı çalıştırın. Hesap yoksa bu parolayla oluşturulur (parola yalnızca hash olarak saklanır, koda/repoya yazılmaz) ve ilk girişte değiştirmeniz istenir. Hesap varsa parolaya dokunulmaz; sonraki açılışlarda bu satırı `.env`'den silebilirsiniz. Bu hesap yönetim alanında tam yetkilidir, talep/olay/değişiklik/envanter gibi içerik kayıtlarını görmez.
 
 **`docker compose down -v` yazmayın**: tüm kayıtları siler.
 

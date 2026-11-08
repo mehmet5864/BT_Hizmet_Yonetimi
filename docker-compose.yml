@@ -35,6 +35,7 @@ services:
       DB_POOL_MAX: ${DB_POOL_MAX:-20}
       SESSION_SECRET: ${SESSION_SECRET:-envanter-yerel-oturum-gizli}
       SESSION_SECURE: ${SESSION_SECURE:-false}
+      BTHS_ADMIN_PASSWORD: ${BTHS_ADMIN_PASSWORD:-}
       APP_URL: ${APP_URL:-http://127.0.0.1:43130}
       SEED_ON_START: ${SEED_ON_START:-true}
       SEED_DEMO_EXTRA: ${SEED_DEMO_EXTRA:-true}

@@ -2,9 +2,11 @@ import {
   MODULE_LABELS,
   MODULE_ROLES,
   type AppModule,
+  isContentModule,
   moduleForPath,
 } from "@/lib/auth/rbac";
 import { ASSIGNABLE_MODULES, assignedGrantName } from "@/lib/auth/assigned-defs";
+import { PROCESS_ROLES, PROCESS_ROLE_DEFAULTS } from "@/lib/itil/process-roles";
 import type { PersonnelRole } from "@/lib/itil/constants";
 import type { RequestOffice } from "@/lib/itil/request-types";
 
@@ -58,7 +60,7 @@ export function isModuleScope(value: string): value is ModuleScope {
  * Bir hücrede kapsam açıkça seçilmediyse ekran bunu gösterir; kayıt süzmesi eski kuralı uygular.
  */
 export function defaultScopes(role: string, mod: AppModule): ModuleScope[] {
-  if (role === "SUPER_ADMIN") return ["ALL"];
+  if (role === "SUPER_ADMIN" || role === "SUPERVISOR") return ["ALL"];
   if (mod === "talepler") {
     if (role === "SENIOR_MANAGER") return ["ALL"];
     return role === "USER" ? ["OWN"] : ["OWN", "UNIT", "OFFICE"];
@@ -92,6 +94,15 @@ export function scopesFor(grants: ModuleGrant[], names: string[], moduleName: Ap
   // Süreç yöneticisi: açık kapsam seçilmediyse modülün tüm kayıtlarını görür.
   const officerName = officerGrantName(moduleName).toLocaleLowerCase("tr-TR");
   if (normalized.includes(officerName) && !grants.some((g) => g.module === moduleName && g.group.toLocaleLowerCase("tr-TR") === officerName && g.scopes?.length)) {
+    found ??= new Set();
+    found.add("ALL");
+  }
+  // Süreç görevi: modülündeki varsayılan yetkide açık kapsam seçilmediyse tüm kayıtları görür (süreç yöneticisi gibi).
+  for (const role of PROCESS_ROLES) {
+    if (!PROCESS_ROLE_DEFAULTS[role][moduleName]) continue;
+    const name = processGrantName(role).toLocaleLowerCase("tr-TR");
+    if (!normalized.includes(name)) continue;
+    if (grants.some((g) => g.module === moduleName && g.group.toLocaleLowerCase("tr-TR") === name && g.scopes?.length)) continue;
     found ??= new Set();
     found.add("ALL");
   }
@@ -147,6 +158,11 @@ export function officerGroupsFor(personId: string, officers: Record<string, stri
   return [...out];
 }
 
+/** Süreç görevi (ITIL) yetki grubu adı: process:INCIDENT_MGR vb. */
+export function processGrantName(role: string) {
+  return `process:${role}`;
+}
+
 export function roleGrantName(role: PersonnelRole) {
   return `role:${role}`;
 }
@@ -172,13 +188,19 @@ export function parsePersonGroups(adGroups: string | null | undefined): string[]
 }
 
 export function viewerGrantNames(input: {
+  /** Kişiye özel modül yetkisi satırları (person:<id>) için. */
+  personId?: string | null;
   role?: string | null;
   requestOffice?: string | null;
   adGroups?: string | null;
+  /** Etkin süreç görevleri (elle + AD eşlemesi). */
+  processRoles?: readonly string[] | null;
 }): string[] {
   const names = new Set<string>(parsePersonGroups(input.adGroups).map((group) => group.trim()));
   if (input.role) names.add(`role:${input.role}`);
   if (input.requestOffice) names.add(`office:${input.requestOffice}`);
+  for (const role of input.processRoles ?? []) names.add(processGrantName(role));
+  if (input.personId) names.add(`person:${input.personId}`);
   return [...names];
 }
 
@@ -189,7 +211,9 @@ export function defaultModuleGrants(): ModuleGrant[] {
       // Düz kullanıcı: envanter ve personelde yalnızca görüntüler; diğer modüllerde kendi kayıtlarında işlem yapar.
       // Personel yönetimi yalnızca süper yönetici; diğerleri yalnızca kendi (birim amiri: birimi) kaydını görür.
       const level: ModuleLevel =
-        mod === "ayarlar"
+        role === "SUPERVISOR"
+          ? "VIEW"
+          : mod === "ayarlar"
           ? "ADMIN"
           : (mod === "envanter" || mod === "personel") && role === "SUPER_ADMIN"
             ? "ADMIN"
@@ -251,7 +275,10 @@ export function moduleLevelFor(
   moduleName: AppModule,
   role?: string | null,
 ): ModuleLevel | "NONE" {
-  if (role === "SUPER_ADMIN") return "ADMIN";
+  // Süper yönetici: yönetim alanında tam yetki, içerik modüllerinde erişim yok (görev ayrılığı).
+  if (role === "SUPER_ADMIN") return isContentModule(moduleName) ? "NONE" : "ADMIN";
+  // Supervisor (denetmen): her modülü yalnızca görür, hiçbir işlem yapamaz. Başka grup / görev yetkisi bunu yükseltemez.
+  if (role === "SUPERVISOR") return moduleName === "ayarlar" || moduleName === "api" ? "NONE" : "VIEW";
   // Modülün atanmış süreç yöneticisi kendi modülünde varsayılan olarak "Modül yöneticisi" olur;
   // yetki matrisinde "Süreç yöneticisi" sütununda açık bir düzey seçilmişse o geçerlidir.
   const officerName = officerGrantName(moduleName);
@@ -267,6 +294,15 @@ export function moduleLevelFor(
     if (best === "NONE" || MODULE_LEVEL_RANK[grant.level] > MODULE_LEVEL_RANK[best]) {
       best = grant.level;
     }
+  }
+  // Süreç görevi: kendi modülünde, matriste açık satırı yoksa varsayılan düzey geçerlidir.
+  for (const role of PROCESS_ROLES) {
+    const level = PROCESS_ROLE_DEFAULTS[role][moduleName];
+    if (!level) continue;
+    const name = processGrantName(role).toLocaleLowerCase("tr-TR");
+    if (!normalized.includes(name)) continue;
+    if (grants.some((g) => g.module === moduleName && g.group.trim().toLocaleLowerCase("tr-TR") === name)) continue;
+    if (best === "NONE" || MODULE_LEVEL_RANK[level] > MODULE_LEVEL_RANK[best]) best = level;
   }
   return best;
 }
@@ -302,8 +338,8 @@ export function canAccessWithAcl(
   ) {
     return true;
   }
-  if (role === "SUPER_ADMIN") return true;
   const mod = moduleForPath(pathname);
+  if (role === "SUPER_ADMIN") return !isContentModule(mod);
   if (!mod) return false;
   return hasModuleLevel(grants, names, mod, "VIEW", role);
 }
@@ -359,6 +395,7 @@ function assetOwnerIds(viewer: AssetViewer, grants: ModuleGrant[] = []) {
 }
 
 function seesAllAssets(viewer: AssetViewer, grants: ModuleGrant[]) {
+  if (viewer.role === "SUPERVISOR") return true;
   if (canSeeAllInventory(inventoryLevel(grants, viewer))) return true;
   return Boolean(inventoryScopes(viewer, grants)?.includes("ALL"));
 }

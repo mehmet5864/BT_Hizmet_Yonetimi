@@ -90,7 +90,7 @@ const ENTRIES: Entry[] = [
     itil: "Erişim yönetimi ve hizmet masası için kimlik temelidir. “Kimin neye yetkili olduğu” denetlenebilir olmalıdır (Raporlar → Erişim denetimi).",
     agile: "Ekip üyeleri çevik modülde ürün sahibi / üye olarak seçilir; personel kaydı olmayan kişiye iş atanamaz.",
     devsecops: "En az yetki ilkesi: geliştiriciye yönetici rolü verilmez. Ayrılan kişinin erişimi aynı gün kapatılır.",
-    tip: "Rol değişikliği yapınca kişinin menüleri hemen değişir; “Modül yetkileri” ayarı ile birlikte çalışır.",
+    tip: "Rol değişikliği yapınca kişinin menüleri hemen değişir; Ayarlar → Yetki ve roller (Rol kataloğu) bağlamalarıyla birlikte çalışır.",
   },
   {
     title: "Envanter ve zimmet",
@@ -509,7 +509,7 @@ const ENTRIES: Entry[] = [
     title: "Ayarlar",
     path: "Sol menü → Ayarlar (/ayarlar)",
     img: "ekran-ayarlar",
-    who: "yalnızca Süper yönetici rolü (Ayarlar menüsü başka rollere kapalıdır)",
+    who: "yalnızca Süper yönetici (yerleşik BTHS_Admin hesabı; Ayarlar menüsü başka rollere kapalıdır)",
     what: "Uygulamanın yönetim merkezi: tanımlar, Active Directory, SIEM, zafiyet tarama, yönetici onayları, e-posta, yetkilendirme, modül yetkileri, görünüm, yedek, puanlama ve denetim kaydı. Ayrıca Güvenlik, İş akışları ve Lisans sayfalarına buradan gidilir. Ayrıntılı kurulum adımları Yönetici rehberindedir.",
     marks: [
       "Sayfa başlığı.",
@@ -521,7 +521,7 @@ const ENTRIES: Entry[] = [
       "Önce Tanımlar sekmesinde birimleri ve süreç yöneticilerini girin.",
       "Sonra entegrasyonları açın (AD, SIEM, tarayıcı, e-posta).",
       "Yönetici onaylarını ve iş akışlarını tanımlayın.",
-      "Yetki ve roller sayfasındaki Modül yetkileri sekmesinde hangi rolün hangi menüyü göreceğini ayarlayın.",
+      "Yetki ve roller sayfasında soldaki listeden bir rol seçin (sistem rolleri, hizmet masası, talep karşılayan ekipler, Olay/Değişiklik/Yama… yöneticileri). Sağda rolün neler yapabildiği görünür; rolü bağlamak istediğiniz AD gruplarını yazın ya da listeden seçin, gerekirse kişileri tek tek ekleyin ve Kaydet’e basın. Talep karşılayan ekiplerde talep türü hangi AD grubuna eskale edilecekse orada belirlenir.",
       "Düzenli yedek alın (Yedek sekmesi).",
     ],
     itil: "Kontrol ve yönetişim: kim neyi onaylar, hangi süre hedeflenir. Ayar değişiklikleri denetim kaydına yazılır.",
@@ -539,7 +539,9 @@ const roleTable: GuideBlock = {
     ["Üst amir", "Üst kademe onayı verir, birimlerin performansını izler", "İş akışı onayları, Raporlar"],
     ["Bilgi güvenliği yöneticisi", "Güvenlik onayı, zafiyet ve SIEM takibi", "Zafiyet, Değişiklik, Raporlar"],
     ["Sistem yöneticisi", "Teknik işleri yürütür; olay, değişiklik, yama, envanter", "Çoğu operasyon menüsü, Ayarlar"],
-    ["Süper yönetici", "Tüm ayarlar, entegrasyonlar, lisans, yedek", "Tüm menüler"],
+    ["Supervisor (denetmen)", "Her modülü ve kaydı yalnızca görür; hiçbir işlem yapamaz", "Tüm menüler (salt okunur, Ayarlar hariç)"],
+    ["Süreç görevi sahibi (ITIL)", "Olay, Problem, Değişiklik, Yayın, Bilgi güvenliği, Varlık/yapılandırma, Servis seviyesi yöneticisi veya CAB üyesi; AD grubuyla ya da elle atanır", "Görevin modülü (yetkisi Yetki matrisinde belirlenir)"],
+    ["Süper yönetici (BTHS_Admin)", "Tüm ayarlar, entegrasyonlar, lisans, yedek, yetki yönetimi; talep/olay/değişiklik/envanter gibi içerik kayıtlarını göremez", "Yönetim menüleri (içerik menüleri kapalı)"],
   ],
 };
 

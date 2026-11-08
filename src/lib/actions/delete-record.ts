@@ -22,6 +22,9 @@ export type DeleteKind =
   | "catalog"
   | "itil-process";
 
+/** Süper yöneticinin silebildiği yönetim kayıtları (içerik değil). */
+const MANAGEMENT_KINDS: ReadonlySet<DeleteKind> = new Set<DeleteKind>(["person", "catalog"]);
+
 const REDIRECT: Record<DeleteKind, string> = {
   asset: "/envanter",
   person: "/personel",
@@ -59,6 +62,13 @@ export async function deleteRecord(_prev: ActionState, formData: FormData): Prom
   const kind = String(formData.get("kind") ?? "") as DeleteKind;
   const id = String(formData.get("id") ?? "");
   if (!id || !REDIRECT[kind]) return { ok: false, message: "Silinecek kayıt belirtilmedi." };
+  // Süper yönetici yalnızca yönetim kayıtlarını (personel, hizmet kataloğu) siler; iş (içerik) kayıtlarına dokunamaz.
+  if (!MANAGEMENT_KINDS.has(kind)) {
+    return {
+      ok: false,
+      message: "İçerik kayıtları (talep, olay, değişiklik, envanter vb.) süper yönetici tarafından silinemez. Silme yetkisi ayrıca tanımlanana kadar kapalıdır.",
+    };
+  }
 
   // Silinen kayda bağlı Çevik iş / süreç akışı adımı / ilişkili kayıt bağlarını temizle.
   const agileSource: Partial<Record<DeleteKind, string>> = {
@@ -96,6 +106,8 @@ export async function deleteRecord(_prev: ActionState, formData: FormData): Prom
     await cleanupLinks();
     if (kind === "person") {
       if (actor.id === id) return { ok: false, message: "Kendi hesabınızı silemezsiniz." };
+      const target = await prisma.person.findUnique({ where: { id }, select: { isBuiltin: true } });
+      if (target?.isBuiltin) return { ok: false, message: "Yerleşik süper yönetici hesabı silinemez." };
       const owned = await prisma.asset.count({ where: { ownerId: id } });
       if (owned) return { ok: false, message: "Bu personelin zimmetli envanteri var. Önce envanteri aktarın veya silin." };
       await prisma.person.delete({ where: { id } });

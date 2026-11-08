@@ -170,6 +170,13 @@ model Person {
   adUsername String? @unique
   adGroups   String?
 
+  /// ITIL süreç görevleri (JSON dizi): INCIDENT_MGR, PROBLEM_MGR, CHANGE_MGR, RELEASE_MGR, SECURITY_MGR, ASSET_CONFIG_MGR, SLM_MGR, CAB_MEMBER
+  processRoles String?
+  /// true ise bir sonraki girişte parola değiştirmeden başka sayfa açılmaz (ilk kurulum hesabı)
+  mustChangePassword Boolean @default(false)
+  /// Yerleşik hesap (BTHS_Admin): silinemez, AD ile eşlenemez
+  isBuiltin Boolean @default(false)
+
   departmentId String?
   department   Department? @relation("DeptMembers", fields: [departmentId], references: [id])
   parentDepartmentId String?

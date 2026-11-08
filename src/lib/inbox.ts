@@ -65,7 +65,7 @@ export async function getInbox(): Promise<InboxSnapshot> {
   }
 
   const viewerId = viewer.id;
-  const isSuper = viewer.role === "SUPER_ADMIN";
+  const isSuper = false; // Süper yönetici içerik gelen kutusunu kullanmaz.
   const managedOffices = isSuper ? [] : await officesManagedBy(viewerId);
   const [inventory, officers, pendingProblems, officeNames] = await Promise.all([
     getInventoryAccess(),

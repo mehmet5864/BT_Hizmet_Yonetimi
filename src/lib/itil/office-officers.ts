@@ -18,7 +18,6 @@ const MANAGER_ROLES: PersonnelRole[] = [
   "SENIOR_MANAGER",
   "SYSTEM_ADMIN",
   "INFOSEC_MANAGER",
-  "SUPER_ADMIN",
 ];
 
 const MODULE_ROLE: Partial<Record<OfficerKey, PersonnelRole[]>> = {

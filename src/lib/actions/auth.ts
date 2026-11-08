@@ -54,6 +54,7 @@ async function toSession(person: {
   adUsername: string | null;
   adGroups: string | null;
   requestOffice?: string | null;
+  mustChangePassword?: boolean;
 }): Promise<SessionUser> {
   const settings = await getSystemSettings();
   const role = resolveEffectiveRole({
@@ -74,6 +75,7 @@ async function toSession(person: {
     title: person.title,
     adUsername: person.adUsername,
     requestOffice: isRequestOffice(person.requestOffice) ? person.requestOffice : null,
+    mustChangePassword: person.mustChangePassword === true,
   };
 }
 

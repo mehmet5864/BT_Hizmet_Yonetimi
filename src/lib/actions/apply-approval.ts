@@ -35,7 +35,6 @@ async function refresh() {
 }
 
 async function canApproveRequest(actor: ApprovalActor, row: { requestingManagerId: string | null; handlingManagerId: string | null; office: string }) {
-  if (actor.role === "SUPER_ADMIN") return true;
   if (row.requestingManagerId === actor.id || row.handlingManagerId === actor.id) return true;
   if (!isRequestOffice(row.office)) return false;
   const offices = await officesManagedBy(actor.id);
@@ -114,7 +113,6 @@ export async function applyRecordApproval(input: {
     }
     const allowed =
       viaWorkflow ||
-      actor.role === "SUPER_ADMIN" ||
       row.requestingManagerId === actor.id ||
       row.infosecManagerId === actor.id ||
       row.approvalUnits.some((unit) => unit.managerId === actor.id);
@@ -152,7 +150,7 @@ export async function applyRecordApproval(input: {
     const row = await prisma.patchRecord.findUnique({ where: { id } });
     if (!row) return deny("Yama bulunamadı.");
     if (row.status !== "PENDING") return deny("Bu kayıt zaten sonuçlandırılmış.");
-    if (!viaWorkflow && actor.role !== "SUPER_ADMIN" && row.requestingManagerId !== actor.id) {
+    if (!viaWorkflow && row.requestingManagerId !== actor.id) {
       return deny("Bu yamayı onaylama yetkiniz yok.");
     }
     await prisma.patchRecord.update({

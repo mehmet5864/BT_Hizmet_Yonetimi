@@ -4,7 +4,7 @@ import { getViewer } from "@/lib/auth/viewer";
 import { isRequestOffice, type RequestViewer } from "@/lib/itil/request-scope";
 import { unitPersonIds } from "@/lib/auth/unit-people";
 import { scopesFor, type ModuleScope } from "@/lib/auth/acl";
-import type { AppModule } from "@/lib/auth/rbac";
+import { isContentModule, type AppModule } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/prisma";
 import { getSystemSettings } from "@/lib/settings-store";
 
@@ -63,8 +63,20 @@ async function scopeFromTags(viewer: RequestViewer, tags: ModuleScope[]): Promis
   };
 }
 
+/** Hiçbir kayıt görünmez: kapsam kişi listesi boş. */
+const EMPTY_SCOPE: DataScope = { all: false, role: "USER", personIds: [], offices: [], assetOwnerIds: [], personRecordIds: [] };
+
 async function withModuleScopes(viewer: RequestViewer, base: DataScope): Promise<DataScope> {
-  if (viewer.role === "SUPER_ADMIN") return base;
+  // Supervisor her kaydı görür (salt okunur); matris kapsamları onu daraltmaz.
+  if (viewer.role === "SUPERVISOR") return base;
+  if (viewer.role === "SUPER_ADMIN") {
+    // Süper yönetici içerik modüllerindeki kayıtları göremez; personel kaydı (yönetim) tam görünür.
+    const modules: Record<string, DataScope> = {};
+    for (const mod of new Set(Object.values(MODEL_MODULE))) {
+      if (isContentModule(mod)) modules[mod] = EMPTY_SCOPE;
+    }
+    return { ...base, modules };
+  }
   const settings = await getSystemSettings();
   const modules: Record<string, DataScope> = {};
   for (const mod of new Set(Object.values(MODEL_MODULE))) {
@@ -89,7 +101,7 @@ async function resolveLegacyScope(viewer: RequestViewer): Promise<DataScope> {
   if (!isScopedRole(role)) {
     // Personel kayıtları: yalnızca süper yönetici hepsini görür; üst amir birimini, diğerleri yalnızca kendini.
     if (role === "SENIOR_MANAGER") return { all: true, personRecordIds: await unitPersonIds(viewer) };
-    if (role === "SUPER_ADMIN") return { all: true };
+    if (role === "SUPER_ADMIN" || role === "SUPERVISOR") return { all: true };
     return { all: true, personRecordIds: [viewer.id] };
   }
   if (role === "USER") return { all: false, role, personIds: [viewer.id], offices: [], assetOwnerIds: [], personRecordIds: [viewer.id] };

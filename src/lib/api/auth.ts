@@ -1,4 +1,6 @@
 import { parsePersonGroups, scopesFor, viewerGrantNames } from "@/lib/auth/acl";
+import { effectiveProcessRoles } from "@/lib/itil/process-roles";
+import { officeFromGroups } from "@/lib/auth/office-map";
 import { getViewerAcl } from "@/lib/auth/viewer";
 import { isPersonnelRole } from "@/lib/auth/rbac";
 import { handledTypesFor } from "@/lib/itil/request-groups";
@@ -36,20 +38,24 @@ const INVALID_KEY = "API anahtarı geçersiz.";
 async function viewerFromPersonId(id: string): Promise<RequestViewer | null> {
   const person = await prisma.person.findUnique({
     where: { id },
-    select: { id: true, role: true, requestOffice: true, departmentId: true, adGroups: true },
+    select: { id: true, role: true, requestOffice: true, departmentId: true, adGroups: true, processRoles: true },
   });
   if (!person) return null;
   const role = isPersonnelRole(person.role) ? person.role : "USER";
-  const requestOffice = isRequestOffice(person.requestOffice) ? person.requestOffice : null;
   const settings = await getSystemSettings();
+  const officeValue = isRequestOffice(person.requestOffice) ? person.requestOffice : officeFromGroups(parsePersonGroups(person.adGroups), settings.ad.officeMaps);
+  const requestOffice = isRequestOffice(officeValue) ? officeValue : null;
+  const processRoles = effectiveProcessRoles(person.processRoles, parsePersonGroups(person.adGroups), settings.ad.processRoleMaps ?? []);
+  const groups = viewerGrantNames({ personId: person.id, role, requestOffice, adGroups: person.adGroups, processRoles });
   return {
     id: person.id,
     role,
     requestOffice,
     departmentId: person.departmentId,
     handledTypes: handledTypesFor(parsePersonGroups(person.adGroups), settings.requestGroups),
-    groups: viewerGrantNames({ role, requestOffice, adGroups: person.adGroups }),
-    requestScopes: scopesFor(settings.acl.grants, viewerGrantNames({ role, requestOffice, adGroups: person.adGroups }), "talepler"),
+    groups,
+    requestScopes: scopesFor(settings.acl.grants, groups, "talepler"),
+    processRoles,
   };
 }
 

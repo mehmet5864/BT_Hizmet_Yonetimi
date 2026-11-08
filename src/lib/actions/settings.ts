@@ -9,13 +9,10 @@ import { probeActiveDirectory } from "@/lib/integrations/ad";
 import { sendSiemEvent } from "@/lib/integrations/cef";
 import { probeSmtp, sendMail } from "@/lib/integrations/mail";
 import { probeScanner } from "@/lib/integrations/scanner";
-import { ACL_VERSION, isAppModule, isModuleLevel, isModuleScope, MODULE_LEVEL_RANK, type ModuleGrant } from "@/lib/auth/acl";
-import { isPersonnelRole, type AdRoleMap } from "@/lib/auth/rbac";
 import { requireModule } from "@/lib/auth/viewer";
 import { isUnitType, UNIT_TYPE_LABELS } from "@/lib/itil/unit-types";
 import { defaultOfficeNames } from "@/lib/itil/office-names";
-import { mergeRequestGroups } from "@/lib/itil/request-groups";
-import { ALL_REQUEST_TYPES, REQUEST_OFFICE_LABELS, REQUEST_OFFICES, slugifyRequestGroup } from "@/lib/itil/request-types";
+import { REQUEST_OFFICE_LABELS, REQUEST_OFFICES } from "@/lib/itil/request-types";
 import {
   applySecret,
   isSiemLogFormat,
@@ -72,6 +69,8 @@ export async function saveAdSettings(_prev: ActionState, formData: FormData): Pr
     groupFilter: text(formData, "groupFilter") || current.ad.groupFilter,
     defaultRole: current.ad.defaultRole,
     roleMaps: current.ad.roleMaps,
+    processRoleMaps: current.ad.processRoleMaps,
+    officeMaps: current.ad.officeMaps,
   };
   await saveSystemSettings(current);
   revalidatePath("/ayarlar");
@@ -171,28 +170,6 @@ export async function saveOfficeNameSettings(_prev: ActionState, formData: FormD
   return saved(undefined, "Talep birimi isimleri kaydedildi.");
 }
 
-export async function saveRequestGroupSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const access = await requireModule("/ayarlar");
-  if (access.error) return access.error;
-  const current = await getSystemSettings();
-  const incoming: Record<string, string> = {};
-  for (const t of ALL_REQUEST_TYPES) {
-    const name = `cat_${t.office}__${slugifyRequestGroup(t.group)}`;
-    if (!formData.has(name)) continue;
-    const value = text(formData, name);
-    if (value && !/^[A-Za-z0-9_.\- ğüşöçıİĞÜŞÖÇ]+$/.test(value)) {
-      return { ok: false, message: `${t.group}: grup adında geçersiz karakter var.` };
-    }
-    incoming[t.key] = value.slice(0, 80);
-  }
-  current.requestGroups = mergeRequestGroups(incoming);
-  await saveSystemSettings(current);
-  revalidatePath("/ayarlar");
-  revalidatePath("/ayarlar/yetkiler");
-  revalidatePath("/talepler");
-  return saved(undefined, "Talep türü – AD grubu eşlemesi kaydedildi.");
-}
-
 export async function saveApprovalSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const access = await requireModule("/ayarlar");
   if (access.error) return access.error;
@@ -287,62 +264,6 @@ export async function saveAppearanceSettings(_prev: ActionState, formData: FormD
   } catch {
     return { ok: false, message: "Tema kaydedilemedi.", stamp: Date.now() };
   }
-}
-
-export async function saveModuleAclSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const access = await requireModule("/ayarlar");
-  if (access.error) return access.error;
-  const current = await getSystemSettings();
-  const modules = formData.getAll("grantModule").map((value) => String(value).trim());
-  const groups = formData.getAll("grantGroup").map((value) => String(value).trim());
-  const levels = formData.getAll("grantLevel").map((value) => String(value).trim());
-  const scopeLists = formData.getAll("grantScopes").map((value) => String(value).trim());
-  const grants: ModuleGrant[] = [];
-  for (let i = 0; i < Math.max(modules.length, groups.length, levels.length); i += 1) {
-    const moduleName = modules[i];
-    const group = groups[i];
-    const level = levels[i];
-    if (!moduleName || !group || !level || !isAppModule(moduleName) || !isModuleLevel(level)) continue;
-    const scopes = (scopeLists[i] ?? "").split(",").map((x) => x.trim()).filter(isModuleScope);
-    grants.push(scopes.length ? { module: moduleName, group, level, scopes } : { module: moduleName, group, level });
-  }
-  // Mükerrer (aynı modül + grup) satırlar tek satıra iner; en yüksek düzey korunur.
-  const merged = new Map<string, ModuleGrant>();
-  for (const grant of grants) {
-    const key = `${grant.module}|${grant.group.toLocaleLowerCase("tr-TR")}`;
-    const prev = merged.get(key);
-    if (!prev || MODULE_LEVEL_RANK[grant.level] > MODULE_LEVEL_RANK[prev.level]) merged.set(key, grant);
-  }
-  const unique = [...merged.values()];
-  current.acl.grants = unique.length ? unique : current.acl.grants;
-  current.acl.version = ACL_VERSION;
-  await saveSystemSettings(current);
-  revalidatePath("/ayarlar");
-  revalidatePath("/ayarlar/yetkiler");
-  revalidatePath("/", "layout");
-  return saved(undefined, "Modül yetkileri kaydedildi.");
-}
-
-export async function saveRbacSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const access = await requireModule("/ayarlar");
-  if (access.error) return access.error;
-  const current = await getSystemSettings();
-  const groups = formData.getAll("mapGroup").map((value) => String(value).trim());
-  const roles = formData.getAll("mapRole").map((value) => String(value).trim());
-  const roleMaps: AdRoleMap[] = [];
-  for (let i = 0; i < Math.max(groups.length, roles.length); i += 1) {
-    const group = groups[i];
-    const role = roles[i];
-    if (!group || !role || !isPersonnelRole(role)) continue;
-    roleMaps.push({ group, role });
-  }
-  const defaultRole = text(formData, "defaultRole");
-  current.ad.defaultRole = isPersonnelRole(defaultRole) ? defaultRole : "USER";
-  current.ad.roleMaps = roleMaps.length ? roleMaps : current.ad.roleMaps;
-  await saveSystemSettings(current);
-  revalidatePath("/ayarlar");
-  revalidatePath("/ayarlar/yetkiler");
-  return saved(undefined, "AD grup → rol eşlemesi kaydedildi.");
 }
 
 export async function testAdConnection(): Promise<ActionState> {
@@ -638,13 +559,4 @@ export async function updateUnit(_prev: ActionState, formData: FormData): Promis
   revalidatePath("/ayarlar/yetkiler");
   revalidatePath("/personel");
   return saved(undefined, `Birim güncellendi: ${name}`);
-}
-
-/** Tek formdan: AD grubu → rol eşlemesi ve talep kategorisi → AD grubu eşlemesi. */
-export async function saveAccessMappings(prev: ActionState, formData: FormData): Promise<ActionState> {
-  const roles = await saveRbacSettings(prev, formData);
-  if (!roles.ok) return roles;
-  const groups = await saveRequestGroupSettings(prev, formData);
-  if (!groups.ok) return groups;
-  return saved(undefined, "AD grup eşlemeleri (rol ve talep kategorisi) kaydedildi.");
 }

@@ -14,7 +14,7 @@ const HREF = { request: "/talepler", change: "/degisiklik", patch: "/yama" } as 
 
 export default async function MyWorkflowApprovalsPage() {
   const viewer = await getViewer();
-  const items = viewer ? await listPendingFor(viewer.id, viewer.role === "SUPER_ADMIN") : [];
+  const items = viewer ? await listPendingFor(viewer.id, false) : [];
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 sm:p-8">
       <ModuleHero

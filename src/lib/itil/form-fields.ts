@@ -1,5 +1,7 @@
 import type { FieldDef } from "@/lib/inventory/fields";
 import {
+  ASSIGNABLE_ROLES,
+  type PersonnelRole,
   CHANGE_STATUSES,
   CHANGE_STATUS_LABELS,
   INCIDENT_STATUSES,
@@ -64,14 +66,21 @@ export const PERSONNEL_FIELDS: FieldDef[] = [
   { id: "photoUrl", label: "Fotoğraf", kind: "image", fullWidth: true },
 ];
 
-export function personnelFields(names?: OfficeNames) {
+export function personnelFields(names?: OfficeNames, currentRole?: string | null) {
   const labels = Object.fromEntries(REQUEST_OFFICES.map((office) => [office, officeLabel(office, names)])) as Record<
     (typeof REQUEST_OFFICES)[number],
     string
   >;
-  return PERSONNEL_FIELDS.map((field) =>
-    field.id === "requestOffice" ? { ...field, options: opt(labels, REQUEST_OFFICES) } : field,
-  );
+  // Rol listesi sade: yalnızca yeni atamada sunulan roller; kişinin mevcut (eski / süper) rolü varsa o da listede kalır.
+  const roles: PersonnelRole[] = [...ASSIGNABLE_ROLES];
+  if (currentRole && (PERSONNEL_ROLES as readonly string[]).includes(currentRole) && !roles.includes(currentRole as PersonnelRole)) {
+    roles.push(currentRole as PersonnelRole);
+  }
+  return PERSONNEL_FIELDS.map((field) => {
+    if (field.id === "requestOffice") return { ...field, options: opt(labels, REQUEST_OFFICES) };
+    if (field.id === "role") return { ...field, options: opt(PERSONNEL_ROLE_LABELS, roles) };
+    return field;
+  });
 }
 
 export const REQUEST_COMMON_FIELDS: FieldDef[] = [

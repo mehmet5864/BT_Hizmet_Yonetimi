@@ -1,6 +1,9 @@
 import { ACL_VERSION, defaultModuleGrants, migrateGrants, normalizeGrants, type ModuleGrant } from "@/lib/auth/acl";
 import { DEFAULT_AD_ROLE_MAPS, type AdRoleMap } from "@/lib/auth/rbac";
 import type { PersonnelRole } from "@/lib/itil/constants";
+import { isProcessRole, type ProcessRoleMap } from "@/lib/itil/process-roles";
+import type { OfficeMap } from "@/lib/auth/office-map";
+import { REQUEST_OFFICES, type RequestOffice } from "@/lib/itil/request-types";
 import { defaultOfficeNames, mergeOfficeNames, type OfficeNames } from "@/lib/itil/office-names";
 import { defaultRequestGroups, mergeRequestGroups, type RequestGroupMap } from "@/lib/itil/request-groups";
 import { isPatternId, isThemeId, type PatternId, type ThemeId } from "@/lib/theme";
@@ -78,6 +81,10 @@ export type SystemSettings = {
     groupFilter: string;
     defaultRole: PersonnelRole;
     roleMaps: AdRoleMap[];
+    /** AD grubu → ITIL süreç görevi (Olay yöneticisi, Değişiklik yöneticisi vb.). */
+    processRoleMaps: ProcessRoleMap[];
+    /** AD grubu → talep ofisi (hizmet masası görevi: SERVIS). Kişide açık ofis yoksa üyelikten gelir. */
+    officeMaps: OfficeMap[];
   };
   siem: {
     enabled: boolean;
@@ -216,6 +223,8 @@ export const DEFAULT_SETTINGS: SystemSettings = {
     groupFilter: "(objectClass=group)",
     defaultRole: "USER",
     roleMaps: DEFAULT_AD_ROLE_MAPS,
+    processRoleMaps: [],
+    officeMaps: [],
   },
   siem: {
     enabled: false,
@@ -300,6 +309,17 @@ export function parseSettings(payload: string | null | undefined): SystemSetting
         roleMaps: Array.isArray(raw.ad?.roleMaps) && raw.ad.roleMaps.length
           ? raw.ad.roleMaps
           : DEFAULT_SETTINGS.ad.roleMaps,
+        processRoleMaps: Array.isArray(raw.ad?.processRoleMaps)
+          ? raw.ad.processRoleMaps.filter(
+              (m): m is ProcessRoleMap => Boolean(m && typeof m.group === "string" && m.group.trim() && isProcessRole(String(m.role))),
+            )
+          : [],
+        officeMaps: Array.isArray(raw.ad?.officeMaps)
+          ? raw.ad.officeMaps.filter(
+              (m): m is OfficeMap =>
+                Boolean(m && typeof m.group === "string" && m.group.trim() && (REQUEST_OFFICES as readonly string[]).includes(String(m.office))),
+            )
+          : [],
       },
       siem: mergeSiem(raw.siem),
       approval: mergeSection(DEFAULT_SETTINGS.approval, raw.approval),

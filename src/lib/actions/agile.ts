@@ -514,7 +514,7 @@ export async function deleteAgileComment(formData: FormData): Promise<void> {
   const comment = await prisma.agileComment.findUnique({ where: { id }, include: { item: { select: { id: true, productId: true, sprintId: true } } } });
   if (!comment) return;
   const mine = comment.authorId === access.viewer.id;
-  if (!mine && access.viewer.role !== "SUPER_ADMIN") return;
+  if (!mine) return;
   await prisma.agileComment.delete({ where: { id } });
   refresh(comment.item.productId, comment.item.sprintId, comment.item.id);
 }

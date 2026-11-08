@@ -5,12 +5,14 @@ import {
   canSeeAllInventory,
   canViewAsset,
   inventoryLevel,
+  parsePersonGroups,
   viewerGrantNames,
   visibleAssetWhere,
   type ModuleGrant,
   type ModuleLevel,
 } from "@/lib/auth/acl";
 import { getViewerAcl } from "@/lib/auth/viewer";
+import { effectiveProcessRoles } from "@/lib/itil/process-roles";
 import type { RequestViewer } from "@/lib/itil/request-scope";
 import { prisma } from "@/lib/prisma";
 import { getSystemSettings } from "@/lib/settings-store";
@@ -55,16 +57,23 @@ export function viewerCanSeeAsset(
 
 export function personCanApproveInventory(
   grants: ModuleGrant[],
-  person: { role?: string | null; requestOffice?: string | null; adGroups?: string | null; groups?: string[] | null },
+  person: { id?: string | null; role?: string | null; requestOffice?: string | null; adGroups?: string | null; groups?: string[] | null; processRoles?: string[] | null },
 ) {
-  const groups = person.groups ?? viewerGrantNames(person);
+  const groups = person.groups ?? viewerGrantNames({ ...person, personId: person.id });
   return canDirectMutateInventory(inventoryLevel(grants, { role: person.role, groups }));
 }
 
 export async function inventoryApproverIds() {
   const settings = await getSystemSettings();
   const people = await prisma.person.findMany({
-    select: { id: true, role: true, requestOffice: true, adGroups: true },
+    select: { id: true, role: true, requestOffice: true, adGroups: true, processRoles: true },
   });
-  return people.filter((person) => personCanApproveInventory(settings.acl.grants, person)).map((person) => person.id);
+  return people
+    .filter((person) =>
+      personCanApproveInventory(settings.acl.grants, {
+        ...person,
+        processRoles: effectiveProcessRoles(person.processRoles, parsePersonGroups(person.adGroups), settings.ad.processRoleMaps ?? []),
+      }),
+    )
+    .map((person) => person.id);
 }

@@ -20,10 +20,10 @@ export default async function SettingsPage({ searchParams }: PageProps<"/ayarlar
   const params = await searchParams;
   const sekme = Array.isArray(params.sekme) ? params.sekme[0] : params.sekme;
   if (sekme === "api") redirect("/api-arayuzu");
-  if (sekme === "tanimlar") redirect("/ayarlar/yetkiler?sekme=yoneticiler");
-  if (sekme === "subeler") redirect("/ayarlar/yetkiler?sekme=birimler");
-  if (sekme === "rbac") redirect("/ayarlar/yetkiler?sekme=roller");
-  if (sekme === "acl") redirect("/ayarlar/yetkiler?sekme=moduller");
+  if (sekme === "tanimlar") redirect("/ayarlar/yetkiler");
+  if (sekme === "subeler") redirect("/ayarlar/yetkiler");
+  if (sekme === "rbac") redirect("/ayarlar/yetkiler");
+  if (sekme === "acl") redirect("/ayarlar/yetkiler");
   const [viewer, scoreRows] = await Promise.all([getViewer(), prisma.scoreRule.findMany()]);
   const isSuper = viewer?.role === "SUPER_ADMIN";
   const license = isSuper ? await getLicenseState() : null;

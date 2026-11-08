@@ -200,7 +200,7 @@ export function SettingsForms({
             <CardTitle className="text-base">Active Directory entegrasyonu</CardTitle>
             <CardDescription>
               Kullanıcı ve grup eşlemesi için LDAP / LDAPS bağlantısı. Şifre yalnızca değiştirdiğinizde güncellenir. Bağlantı çalışınca AD güvenlik gruplarını talep kategorileriyle eşleştirmek için{" "}
-              <a href="/ayarlar/yetkiler?sekme=talep" className="text-primary underline underline-offset-2">Yetki ve roller</a> sayfasını açın.
+              <a href="/ayarlar/yetkiler" className="text-primary underline underline-offset-2">Yetki ve roller</a> sayfasını açın.
             </CardDescription>
           </CardHeader>
           <CardContent>

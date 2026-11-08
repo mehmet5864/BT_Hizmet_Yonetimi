@@ -97,7 +97,7 @@ export function openApiDocument(origin: string) {
     openapi: "3.0.3",
     info: {
       title: "BT Hizmet Yönetimi API",
-      version: "1.0.0",
+      version: "1.1.0",
       description:
         "ITIL süreçleri ve envanter için REST arayüzü. Authorization: Bearer bth_… veya X-Api-Key. Yazma bağlı anahtar veya aynı kaynak oturumu ister.",
     },

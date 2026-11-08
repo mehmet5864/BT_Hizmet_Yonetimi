@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   const scopedInventory = Boolean(inventory && !inventory.canSeeAll);
   const scopedDb = await getScopedDb();
   const license = viewer?.role === "SUPER_ADMIN" ? await getLicenseState() : null;
-  const wfPending = viewer ? await listPendingFor(viewer.id, viewer.role === "SUPER_ADMIN").catch(() => []) : [];
+  const wfPending = viewer ? await listPendingFor(viewer.id, false).catch(() => []) : [];
   const data = await getDashboardData(
     viewer
       ? {

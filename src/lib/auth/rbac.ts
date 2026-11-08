@@ -6,6 +6,7 @@ export const ROLE_RANK: Record<PersonnelRole, number> = {
   UNIT_MANAGER: 2,
   SENIOR_MANAGER: 3,
   INFOSEC_MANAGER: 4,
+  SUPERVISOR: 1,
   SYSTEM_ADMIN: 5,
   SUPER_ADMIN: 6,
 };
@@ -22,7 +23,6 @@ export const ROLE_SOURCE_LABELS: Record<RoleSource, string> = {
 export type AdRoleMap = { group: string; role: PersonnelRole };
 
 export const DEFAULT_AD_ROLE_MAPS: AdRoleMap[] = [
-  { group: "GG_SuperYoneticiler", role: "SUPER_ADMIN" },
   { group: "GG_SistemYoneticileri", role: "SYSTEM_ADMIN" },
   { group: "GG_UstAmirler", role: "SENIOR_MANAGER" },
   { group: "GG_BilgiGuvenligi", role: "INFOSEC_MANAGER" },
@@ -42,6 +42,8 @@ export function mapAdGroupsToRole(groups: string[], maps: AdRoleMap[], fallback:
   let role: PersonnelRole | null = null;
   const normalized = groups.map((group) => group.trim().toLocaleLowerCase("tr-TR"));
   for (const rule of maps) {
+    // Süper yönetici yalnızca yerleşik yerel hesaptır (BTHS_Admin); AD grubu bu rolü veremez.
+    if (rule.role === "SUPER_ADMIN") continue;
     const needle = rule.group.trim().toLocaleLowerCase("tr-TR");
     if (!needle) continue;
     const hit = normalized.some((group) => group === needle);
@@ -108,7 +110,7 @@ export const MODULE_LABELS: Record<AppModule, string> = {
 };
 
 const ALL_ROLES_NO_ADMIN: PersonnelRole[] = PERSONNEL_ROLES.filter((role) => role !== "USER");
-const NO_API_ROLES: PersonnelRole[] = ["SUPER_ADMIN", "SYSTEM_ADMIN", "SENIOR_MANAGER", "INFOSEC_MANAGER"];
+const NO_API_ROLES: PersonnelRole[] = ["SUPER_ADMIN", "SYSTEM_ADMIN", "SENIOR_MANAGER", "INFOSEC_MANAGER", "SUPERVISOR"];
 
 /**
  * Modül erişimi (rol bazlı taban):
@@ -139,18 +141,49 @@ export const MODULE_ROLES: Record<AppModule, PersonnelRole[]> = {
   ayarlar: ["SUPER_ADMIN"],
 };
 
+/**
+ * İçerik modülleri: talep, olay, değişiklik, envanter gibi iş kayıtlarının bulunduğu modüller.
+ * Süper yönetici yalnızca yönetim alanında (ayarlar, kullanıcı, yetki, birim, katalog, lisans) yetkilidir;
+ * bu modüllerde kayıt göremez ve işlem yapamaz (görev ayrılığı).
+ */
+export const CONTENT_MODULES: ReadonlySet<AppModule> = new Set<AppModule>([
+  "envanter",
+  "talepler",
+  "degisiklik",
+  "yama",
+  "konfigurasyon",
+  "zafiyet",
+  "firma-sla",
+  "olay",
+  "problem",
+  "cevik",
+  "surec",
+]);
+
+export function isContentModule(mod: AppModule | null | undefined) {
+  return Boolean(mod && CONTENT_MODULES.has(mod));
+}
+
+/** Süper yönetici iş (içerik) kayıtlarına erişemez; diğer roller matris kurallarına tabidir. */
+export function canActOnContent(role?: string | null) {
+  return role !== "SUPER_ADMIN";
+}
+
 export function isRequesterOnly(role?: string | null) {
   return !role || role === "USER";
 }
 
 export function canMutateInventory(role?: string | null) {
-  return isPersonnelRole(role ?? "") && role !== "USER";
+  return isPersonnelRole(role ?? "") && role !== "USER" && role !== "SUPERVISOR";
 }
 
 export function canAssignRole(actorRole: string | null | undefined, targetRole: string) {
   if (!actorRole || !isPersonnelRole(actorRole) || !isPersonnelRole(targetRole)) return false;
-  if (actorRole === "SUPER_ADMIN") return true;
+  // Tek süper yönetici kuralı: bu rol hiç kimseye yeni atanamaz (mevcut sahibinin kaydı korunur, bkz. savePerson).
   if (targetRole === "SUPER_ADMIN") return false;
+  if (actorRole === "SUPER_ADMIN") return true;
+  // Denetmen (Supervisor) rolünü yalnızca Süper Admin verir (görev ayrılığı).
+  if (targetRole === "SUPERVISOR") return false;
   return ROLE_RANK[actorRole] >= ROLE_RANK[targetRole];
 }
 

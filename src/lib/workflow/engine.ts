@@ -192,7 +192,7 @@ export async function decideWorkflowFor(
   const loaded = await loadFacts(entity, entityId);
   if (!loaded) return { ok: false, message: "Kayıt bulunamadı." };
   const approvers = await resolveApprovers(node, loaded.facts);
-  const allowed = actor.role === "SUPER_ADMIN" || approvers.includes(actor.id);
+  const allowed = approvers.includes(actor.id);
   if (!allowed) {
     return { ok: false, message: `Sıradaki onay adımı "${node.label}" (${approverText(node)}). Bu adımı onaylama yetkiniz yok.` };
   }
