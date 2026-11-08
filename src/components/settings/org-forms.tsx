@@ -35,9 +35,7 @@ const OFFICER_GROUPS = [
     title: "3 · İsteğe bağlı (kurumunuzda sorumlu varsa)",
     note: "Boş bırakılanlar rolüne uygun bir kişiyle otomatik doldurulur; yalnızca varsayılan sorumlu ve modül yönetimi içindir.",
     keys: [
-      "olay", "problem", "konfigurasyon", "zafiyet", "firmaSla", "zimmet", "personel", "rapor",
-      "katalog", "bilgi", "akis", "tasarim", "kullanilabilirlik", "kapasite", "sureklilik", "dogrulama", "surum",
-      "izleme", "degerlendirme", "cevik",
+      "olay", "problem", "zafiyet", "firmaSla", "zimmet", "personel", "katalog", "surec",
     ] as readonly string[],
     optional: true,
   },
@@ -53,7 +51,7 @@ export function OfficersForm({ settings, people }: { settings: SystemSettings; p
           <CardHeader>
             <CardTitle className="text-base">Süreç yöneticileri</CardTitle>
             <CardDescription>
-              Her modül ve ITIL süreci (envanter, zimmet, personel, katalog, bilgi bankası, süreç akışı, tasarım, kullanılabilirlik, kapasite, süreklilik, test, sürüm, izleme, değerlendirme, Çevik, rapor; ayrıca değişiklik, yama, konfigürasyon, zafiyet, firma/SLA, olay ve problem) için sorumlu personeli seçin.
+              Varsayılan sorumlu ve onaycıları seçin: şube yöneticileri, bilgi güvenliği, envanter, zimmet, personel, katalog, değişiklik, yama, zafiyet, firma/SLA, olay, problem ve süreç yöneticisi. Konfigürasyon, Çevik ve rapor yönetimi Rol kataloğundan bağlanır.
               Yeni kayıtlarda yönetici alanı bu kişilerle dolar. Şube yöneticileri kendi ofislerindeki talepleri onaylar; onaydan sonra kayıt işlemde (açıkta) devam eder. E-posta açıksa onaycıya doğrudan onay bağlantısı gider.
             </CardDescription>
           </CardHeader>

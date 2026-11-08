@@ -29,7 +29,6 @@ const MODULE_ROLE: Partial<Record<OfficerKey, PersonnelRole[]>> = {
   sistem: ["SYSTEM_ADMIN"],
   yama: ["SYSTEM_ADMIN"],
   degisiklik: ["SYSTEM_ADMIN"],
-  konfigurasyon: ["SYSTEM_ADMIN"],
   veritabani: ["SYSTEM_ADMIN"],
   network: ["UNIT_MANAGER", "SYSTEM_ADMIN"],
   yazilim: ["UNIT_MANAGER", "SYSTEM_ADMIN"],
@@ -39,18 +38,7 @@ const MODULE_ROLE: Partial<Record<OfficerKey, PersonnelRole[]>> = {
   zimmet: ["UNIT_MANAGER", "SYSTEM_ADMIN"],
   personel: ["UNIT_MANAGER", "SYSTEM_ADMIN"],
   katalog: ["SYSTEM_ADMIN", "UNIT_MANAGER"],
-  bilgi: ["INFOSEC_MANAGER", "SYSTEM_ADMIN"],
-  akis: ["SYSTEM_ADMIN"],
-  tasarim: ["SYSTEM_ADMIN"],
-  kullanilabilirlik: ["SYSTEM_ADMIN"],
-  kapasite: ["SYSTEM_ADMIN"],
-  sureklilik: ["INFOSEC_MANAGER", "SYSTEM_ADMIN"],
-  dogrulama: ["SYSTEM_ADMIN"],
-  surum: ["SYSTEM_ADMIN"],
-  izleme: ["SYSTEM_ADMIN"],
-  degerlendirme: ["UNIT_MANAGER", "SYSTEM_ADMIN"],
-  cevik: ["SYSTEM_ADMIN", "UNIT_MANAGER"],
-  rapor: ["INFOSEC_MANAGER", "SYSTEM_ADMIN"],
+  surec: ["SYSTEM_ADMIN"],
 };
 
 async function existingId(id?: string | null) {

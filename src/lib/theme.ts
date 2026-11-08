@@ -27,6 +27,17 @@ export const THEME_OPTIONS: { id: ThemeId; label: string; hint: string; swatches
 export const PATTERNS = ["yok", "izgara", "nokta", "capraz", "gelecek"] as const;
 export type PatternId = (typeof PATTERNS)[number];
 export const PATTERN_LABELS: Record<PatternId, string> = { yok: "Düz", izgara: "Izgara", nokta: "Noktalı", capraz: "Çapraz çizgi", gelecek: "Fütüristik (geçişli renk + ışık çizgileri)" };
+export const ASPECTS = ["auto", "dar"] as const;
+export type AspectId = (typeof ASPECTS)[number];
+export const ASPECT_LABELS: Record<AspectId, string> = { auto: "Ekrana uyumlu (geniş ekranda yanları kullan)", dar: "Dar sütun (sabit genişlik)" };
+export function isAspectId(value: string | null | undefined): value is AspectId {
+  return !!value && (ASPECTS as readonly string[]).includes(value);
+}
+export function applyAspect(aspect: AspectId) {
+  if (typeof document === "undefined") return;
+  document.documentElement.dataset.aspect = aspect;
+}
+
 export function isPatternId(value: string | null | undefined): value is PatternId {
   return !!value && (PATTERNS as readonly string[]).includes(value);
 }

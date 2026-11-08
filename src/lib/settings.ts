@@ -6,7 +6,7 @@ import type { OfficeMap } from "@/lib/auth/office-map";
 import { REQUEST_OFFICES, type RequestOffice } from "@/lib/itil/request-types";
 import { defaultOfficeNames, mergeOfficeNames, type OfficeNames } from "@/lib/itil/office-names";
 import { defaultRequestGroups, mergeRequestGroups, type RequestGroupMap } from "@/lib/itil/request-groups";
-import { isPatternId, isThemeId, type PatternId, type ThemeId } from "@/lib/theme";
+import { isAspectId, isPatternId, isThemeId, type AspectId, type PatternId, type ThemeId } from "@/lib/theme";
 
 export type SmtpSecure = "NONE" | "STARTTLS" | "SSL";
 export type SiemProtocol = "UDP" | "TCP" | "TLS";
@@ -141,6 +141,8 @@ export type SystemSettings = {
   appearance: {
     theme: ThemeId;
     pattern: PatternId;
+    /** Sayfa genişliği: auto = ekran çözünürlüğüne göre yanlardaki boşluğu kullanır, dar = eski sabit sütun genişliği. */
+    aspect: AspectId;
   };
   layout: {
     /** false: 1.3.0 menüsü. Kayıtlar silinmez. */
@@ -160,7 +162,6 @@ export const OFFICER_DEFS = [
   { key: "infosec", label: "Bilgi güvenliği yöneticisi", hint: "Problem atamasını onaylar; siber süreçlerde varsayılan BG yöneticisidir." },
   { key: "degisiklik", label: "Değişiklik yöneticisi", hint: "Yeni değişiklik kaydında varsayılan talep amiri." },
   { key: "yama", label: "Yama yöneticisi", hint: "Yeni yama kaydında varsayılan talep amiri." },
-  { key: "konfigurasyon", label: "Konfigürasyon yöneticisi", hint: "Uygulama konfigürasyon kayıtlarından sorumlu kişi." },
   { key: "zafiyet", label: "Zafiyet yöneticisi", hint: "Yeni zafiyet kaydında varsayılan cihaz amiri." },
   { key: "firmaSla", label: "Firma / SLA yöneticisi", hint: "Arıza bildiriminde varsayılan birim amiri." },
   { key: "olay", label: "Olay yöneticisi", hint: "Yeni olay kaydında varsayılan talep amiri." },
@@ -175,18 +176,7 @@ export const OFFICER_DEFS = [
   { key: "zimmet", label: "Zimmet yöneticisi", hint: "Zimmet devri, iade ve tutanaklardan sorumlu kişi." },
   { key: "personel", label: "Personel yöneticisi", hint: "Personel kayıtları, birim ve rol atamalarından sorumlu kişi." },
   { key: "katalog", label: "Hizmet kataloğu yöneticisi", hint: "Hizmet kataloğu girişlerinden sorumlu kişi; yeni hizmette varsayılan sahip." },
-  { key: "bilgi", label: "Bilgi bankası yöneticisi", hint: "Bilgi bankası makalelerini inceler ve yayınlar." },
-  { key: "akis", label: "Süreç akışı yöneticisi", hint: "Süreç şablonları ve canlı süreç akışlarından sorumlu kişi." },
-  { key: "tasarim", label: "Hizmet tasarımı yöneticisi", hint: "Hizmet tasarımı kayıtlarında varsayılan sorumlu." },
-  { key: "kullanilabilirlik", label: "Kullanılabilirlik yöneticisi", hint: "Kullanılabilirlik kayıtlarında varsayılan sorumlu." },
-  { key: "kapasite", label: "Kapasite yöneticisi", hint: "Kapasite planlama kayıtlarında varsayılan sorumlu." },
-  { key: "sureklilik", label: "Süreklilik (DR) yöneticisi", hint: "Felaket kurtarma ve süreklilik kayıtlarında varsayılan sorumlu." },
-  { key: "dogrulama", label: "Doğrulama ve test yöneticisi", hint: "Test ve kabul kayıtlarında varsayılan sorumlu." },
-  { key: "surum", label: "Sürüm yöneticisi", hint: "Sürüm ve dağıtım kayıtlarında varsayılan sorumlu." },
-  { key: "izleme", label: "İzleme (olay izleme) yöneticisi", hint: "İzleme alarm kayıtlarında varsayılan sorumlu." },
-  { key: "degerlendirme", label: "Hizmet değerlendirme yöneticisi", hint: "Hizmet değerlendirme kayıtlarında varsayılan sorumlu." },
-  { key: "cevik", label: "Çevik çalışma yöneticisi", hint: "Çevik ürün, sprint ve iş akışlarından sorumlu kişi (ürün sahibi ürün bazında ayrıca seçilir)." },
-  { key: "rapor", label: "Rapor yöneticisi", hint: "Raporlar, dışa aktarım ve denetim listelerinden sorumlu kişi." },
+  { key: "surec", label: "Süreç yöneticisi (ITIL süreçleri)", hint: "Bilgi bankası, süreç akışı, hizmet tasarımı, kullanılabilirlik, kapasite, süreklilik, test, sürüm, izleme ve değerlendirme kayıtlarında varsayılan sorumlu." },
 ] as const;
 
 export type OfficerKey = (typeof OFFICER_DEFS)[number]["key"];
@@ -292,6 +282,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   appearance: {
     theme: "deniz",
     pattern: "gelecek",
+    aspect: "auto",
   },
   layout: {
     itilV2: true,
@@ -346,6 +337,7 @@ export function parseSettings(payload: string | null | undefined): SystemSetting
         pattern: isPatternId(String(raw.appearance?.pattern ?? ""))
           ? (raw.appearance!.pattern as PatternId)
           : DEFAULT_SETTINGS.appearance.pattern,
+        aspect: isAspectId(String(raw.appearance?.aspect ?? "")) ? (raw.appearance!.aspect as AspectId) : DEFAULT_SETTINGS.appearance.aspect,
       },
       layout: {
         itilV2: raw.layout?.itilV2 !== false,
@@ -411,6 +403,10 @@ export function publicSettings(settings: SystemSettings): SystemSettings {
   };
 }
 
+const LEGACY_PROCESS_OFFICER_KEYS = [
+  "tasarim", "kullanilabilirlik", "kapasite", "sureklilik", "dogrulama", "surum", "izleme", "degerlendirme", "bilgi", "akis", "konfigurasyon", "cevik", "rapor",
+] as const;
+
 function mergeOfficers(incoming: unknown): Officers {
   const raw = incoming && typeof incoming === "object" ? (incoming as Record<string, unknown>) : {};
   const next = emptyOfficers();
@@ -420,6 +416,17 @@ function mergeOfficers(incoming: unknown): Officers {
   if (!next.infosec) next.infosec = String(raw.infosecManagerId ?? "").trim();
   if (!next.yama) next.yama = String(raw.patchManagerId ?? "").trim();
   if (!next.problem) next.problem = String(raw.problemManagerId ?? "").trim();
+  // v1.1.0: birleştirilen eski alanlar → "Süreç yöneticisi". Başka modülün yöneticisi olmayan ilk dolu kişi taşınır.
+  if (!next.surec) {
+    const used = new Set(Object.values(next).filter(Boolean));
+    for (const legacy of LEGACY_PROCESS_OFFICER_KEYS) {
+      const id = String(raw[legacy] ?? "").trim();
+      if (id && !used.has(id)) {
+        next.surec = id;
+        break;
+      }
+    }
+  }
   return next;
 }
 

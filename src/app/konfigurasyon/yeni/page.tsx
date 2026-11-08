@@ -8,7 +8,7 @@ import { CONFIG_FIELDS } from "@/lib/itil/form-fields";
 export const dynamic = "force-dynamic";
 
 export default async function NewConfigPage() {
-  const [{ t }, catalog, defaults] = await Promise.all([getTranslator(), getItilCatalog(), withModuleManagerDefaults("konfigurasyon")]);
+  const [{ t }, catalog, defaults] = await Promise.all([getTranslator(), getItilCatalog(), withModuleManagerDefaults("surec")]);
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 sm:p-8">
       <PageHeader title={t("pages.newConfig")} />

@@ -24,7 +24,7 @@ import {
   type SystemSettings,
 } from "@/lib/settings";
 import { isSafeHostname, safeApiPath } from "@/lib/security/http";
-import { isPatternId, isThemeId } from "@/lib/theme";
+import { isAspectId, isPatternId, isThemeId } from "@/lib/theme";
 import { prisma } from "@/lib/prisma";
 import {
   buildConfigBackup,
@@ -257,7 +257,8 @@ export async function saveAppearanceSettings(_prev: ActionState, formData: FormD
     const theme = text(formData, "theme");
     if (!isThemeId(theme)) return { ok: false, message: "Geçersiz tema.", stamp: Date.now() };
     const patternRaw = text(formData, "pattern");
-    current.appearance = { theme, pattern: isPatternId(patternRaw) ? patternRaw : "nokta" };
+    const aspectRaw = text(formData, "aspect");
+    current.appearance = { theme, pattern: isPatternId(patternRaw) ? patternRaw : "gelecek", aspect: isAspectId(aspectRaw) ? aspectRaw : "auto" };
     current.layout = { itilV2: flag(formData, "itilV2") };
     await saveSystemSettings(current);
     return saved(undefined, "Görünüm kaydedildi.");

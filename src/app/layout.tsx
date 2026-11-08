@@ -54,6 +54,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       dir={i18n.dir}
       data-theme={theme}
       data-pattern={settings.appearance.pattern}
+      data-aspect={settings.appearance.aspect}
       className={cn(
         geistSans.variable,
         geistMono.variable,

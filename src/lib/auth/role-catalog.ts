@@ -37,8 +37,8 @@ const TALEP: RoleDef[] = [
 ];
 
 const PROCESS_DESCRIPTIONS: Partial<Record<(typeof PROCESS_ROLES)[number], string>> = {
-  PROCESS_MGR: "Yayın, izleme, hizmet tasarımı, kullanılabilirlik, kapasite, süreklilik, test, değerlendirme, bilgi bankası ve süreç akışı süreçlerinin ortak yöneticisi.",
-  SECURITY_MGR: "Bilgi güvenliği (BGYS) ve zafiyet yönetimi: zafiyet modülünün yöneticisi.",
+  PROCESS_MGR: "Yayın, izleme, hizmet tasarımı, kullanılabilirlik, kapasite, süreklilik, test, değerlendirme, bilgi bankası ve süreç akışı süreçlerinin; ayrıca Konfigürasyon (CMDB), Hizmet kataloğu, Firma/SLA, Çevik ve Raporlar modüllerinin ortak yöneticisi.",
+  SECURITY_MGR: "Bilgi güvenliği (BGYS): zafiyet modülünün yöneticisi.",
 };
 
 const PROCESS: RoleDef[] = PROCESS_ROLES.map((key) => ({
@@ -52,7 +52,7 @@ const PROCESS: RoleDef[] = PROCESS_ROLES.map((key) => ({
 }));
 
 export const ROLE_CATALOG: RoleDef[] = [...SYSTEM, ...TALEP, ...PROCESS];
-export const ROLE_CATEGORIES = ["Sistem rolleri", "Talep işleme", "Operasyon ve geçiş", "Tasarım ve iyileştirme", "Destek"];
+export const ROLE_CATEGORIES = ["Sistem rolleri", "Talep işleme", "Süreç ve modül yöneticileri"];
 
 export const roleByKey = (key: string) => ROLE_CATALOG.find((r) => r.key === key);
 

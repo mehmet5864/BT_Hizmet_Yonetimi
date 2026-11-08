@@ -348,7 +348,7 @@ export function AppShell({
 
   return (
     <OfficeNamesProvider names={officeNames}>
-    <div className="flex min-h-svh">
+    <div className="app-frame flex min-h-svh">
       <aside className="app-sidebar text-sidebar-foreground hidden w-72 shrink-0 border-e border-transparent p-4 lg:block">
         <div className="sticky top-4 h-[calc(100svh-2rem)]">
           <NavContent

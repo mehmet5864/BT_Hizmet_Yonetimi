@@ -51,7 +51,7 @@ import { UNIT_TYPES, UNIT_TYPE_LABELS } from "@/lib/itil/unit-types";
 import { UnitRow, type UnitItem } from "@/components/settings/unit-row";
 import { AuditLogPanel, type AuditLogItem } from "@/components/settings/audit-log-panel";
 import { ConfigBackupPanel } from "@/components/settings/config-backup-panel";
-import { applyPattern, applyTheme, PATTERNS, PATTERN_LABELS, THEME_OPTIONS, type PatternId, type ThemeId } from "@/lib/theme";
+import { applyAspect, applyPattern, applyTheme, ASPECTS, ASPECT_LABELS, PATTERNS, PATTERN_LABELS, THEME_OPTIONS, type AspectId, type PatternId, type ThemeId } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -172,6 +172,7 @@ export function SettingsForms({
   const [appearanceState, appearanceAction, appearancePending] = useActionState(saveAppearanceSettings, EMPTY_STATE);
   const [theme, setTheme] = useState<ThemeId>(settings.appearance.theme);
   const [pattern, setPattern] = useState<PatternId>(settings.appearance.pattern);
+  const [aspect, setAspect] = useState<AspectId>(settings.appearance.aspect);
 
   useEffect(() => {
     if (appearanceState.ok) applyTheme(theme);
@@ -392,6 +393,30 @@ export function SettingsForms({
                     </button>
                   ))}
                 </div>
+              </div>
+              <input type="hidden" name="aspect" value={aspect} />
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Genel görünüm (sayfa genişliği)</p>
+                <div className="flex flex-wrap gap-2">
+                  {ASPECTS.map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      onClick={() => {
+                        setAspect(a);
+                        applyAspect(a);
+                      }}
+                      aria-pressed={aspect === a}
+                      className={cn(
+                        "cursor-pointer rounded-lg border px-3 py-1.5 text-sm transition-all",
+                        aspect === a ? "border-primary ring-2 ring-primary/30" : "hover:border-primary/40",
+                      )}
+                    >
+                      {ASPECT_LABELS[a]}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-muted-foreground text-xs">Ekrana uyumlu: sayfalar açılan ekranın çözünürlüğüne göre genişler, yanlardaki boşluk kullanılır (küçük ekranlarda değişmez). Dar sütun: eski sabit genişlik.</p>
               </div>
               <Flag
                 name="itilV2"

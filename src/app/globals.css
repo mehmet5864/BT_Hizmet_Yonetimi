@@ -61,7 +61,7 @@
   --secondary: #e1ebf4;
   --secondary-foreground: #1553a3;
   --muted: #eef2f6;
-  --muted-foreground: #707f93;
+  --muted-foreground: #566579;
   --accent: #eaf2ff;
   --accent-foreground: #1553a3;
   --destructive: #e13d4b;
@@ -76,8 +76,8 @@
   --radius: 0.5rem;
   --sidebar: #232f40;
   --sidebar-foreground: #bec9d9;
-  --sidebar-primary: #276dd9;
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary: #5a9bff;
+  --sidebar-primary-foreground: #0b1b33;
   --sidebar-accent: #2c3a4d;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #2c3a4d;
@@ -1396,4 +1396,35 @@ tbody tr { transition: background-color 0.18s ease; }
   .app-sidebar nav a:hover {
     transform: none;
   }
+}
+
+/* Açık temalarda üst başlık bandı açık tonlu olur; koyu bant üzerinde koyu yazı okunmuyordu. */
+[data-theme="acik"],
+[data-theme="acikmavi"],
+[data-theme="acikyesil"],
+[data-theme="grafit"],
+[data-theme="gri"],
+[data-theme="gul"],
+[data-theme="gunbatimi"],
+[data-theme="krem"],
+[data-theme="lavanta"],
+[data-theme="orman"],
+[data-theme="turkuaz"] {
+  --hero-from: color-mix(in oklab, var(--primary) 16%, var(--card));
+  --hero-to: color-mix(in oklab, var(--primary) 5%, var(--card));
+}
+
+/* Genel görünüm: ekrana uyumlu — sayfa sütunları açılan ekranın genişliğine göre büyür, yanlardaki boşluk kullanılır.
+   Ayarlar → Görünüm → "Dar sütun" seçilirse (data-aspect="dar") eski sabit genişlikler geçerli kalır.
+   Küçük ekranlarda zaten tam genişlik olduğundan fark yoktur. */
+html:not([data-aspect="dar"]) .app-canvas > div[class*="max-w-3xl"] {
+  max-width: min(100%, max(48rem, 50vw));
+}
+html:not([data-aspect="dar"]) .app-canvas > div[class*="max-w-4xl"] {
+  max-width: min(100%, max(56rem, 58vw));
+}
+html:not([data-aspect="dar"]) .app-canvas > div[class*="max-w-5xl"],
+html:not([data-aspect="dar"]) .app-canvas > div[class*="max-w-6xl"],
+html:not([data-aspect="dar"]) .app-canvas > div[class*="max-w-7xl"] {
+  max-width: min(100%, 2200px);
 }

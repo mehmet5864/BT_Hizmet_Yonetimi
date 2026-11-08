@@ -1542,9 +1542,7 @@ export const EN_PHRASES: Record<string, string> = {
   "Rol kataloğu": "Role catalog",
   "Sistem rolleri": "System roles",
   "Talep işleme": "Request handling",
-  "Operasyon ve geçiş": "Operation and transition",
-  "Tasarım ve iyileştirme": "Design and improvement",
-  "Destek": "Support",
+  "Süreç ve modül yöneticileri": "Process and module managers",
   "Kişiler": "People",
   "Bağlı grup yok.": "No bound group.",
   "Elle eklenmiş kişi yok.": "No manually added people.",
@@ -1558,6 +1556,10 @@ export const EN_PHRASES: Record<string, string> = {
   "Talep karşılayan ekipler": "Request handling teams",
   "Varsayılan yöneticiler ve birim onaycıları": "Default managers and unit approvers",
   "Fütüristik (geçişli renk + ışık çizgileri)": "Futuristic (gradient colors + light lines)",
+  "Genel görünüm (sayfa genişliği)": "General view (page width)",
+  "Ekrana uyumlu (geniş ekranda yanları kullan)": "Adaptive (use side space on wide screens)",
+  "Dar sütun (sabit genişlik)": "Narrow column (fixed width)",
+  "Ekrana uyumlu: sayfalar açılan ekranın çözünürlüğüne göre genişler, yanlardaki boşluk kullanılır (küçük ekranlarda değişmez). Dar sütun: eski sabit genişlik.": "Adaptive: pages grow with the screen resolution and use the side space (unchanged on small screens). Narrow column: the old fixed width.",
 };
 
 /** Sayı veya değişken içeren metinler için kurallar: [regex, değiştirme]. */

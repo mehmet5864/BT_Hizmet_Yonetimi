@@ -67,7 +67,6 @@ async function backfillOfficers(settings: SystemSettings) {
     infosec,
     degisiklik: sysadmin,
     yama: sysadmin,
-    konfigurasyon: sysadmin,
     zafiyet: infosec,
     firmaSla: sysadmin,
     olay: infosec,
@@ -82,18 +81,7 @@ async function backfillOfficers(settings: SystemSettings) {
     zimmet: unitManager ?? sysadmin,
     personel: unitManager ?? sysadmin,
     katalog: sysadmin,
-    bilgi: infosec ?? sysadmin,
-    akis: sysadmin,
-    tasarim: sysadmin,
-    kullanilabilirlik: sysadmin,
-    kapasite: sysadmin,
-    sureklilik: infosec ?? sysadmin,
-    dogrulama: sysadmin,
-    surum: sysadmin,
-    izleme: sysadmin,
-    degerlendirme: unitManager ?? sysadmin,
-    cevik: sysadmin,
-    rapor: infosec ?? sysadmin,
+    surec: sysadmin,
   };
 
   let changed = false;

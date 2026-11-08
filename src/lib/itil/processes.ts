@@ -79,7 +79,7 @@ export const ITIL_PROCESSES: ItilProcessDef[] = [
     english: "Service Design",
     description: "Yeni veya değişen hizmetin iş hedefi, güvenlik standardı ve müşteri beklentisine göre tasarımı.",
     href: "/surec/tasarim",
-    officer: "tasarim",
+    officer: "surec",
     group: "tasarim",
     statuses: ticketStatusOpts,
     extraFields: [
@@ -117,7 +117,7 @@ export const ITIL_PROCESSES: ItilProcessDef[] = [
     english: "Availability Management",
     description: "Hizmetin ihtiyaç duyulan anda, taahhüt edilen sürelerde çalışmasını güvenceye alır.",
     href: "/surec/kullanilabilirlik",
-    officer: "kullanilabilirlik",
+    officer: "surec",
     group: "tasarim",
     statuses: ticketStatusOpts,
     extraFields: [
@@ -136,7 +136,7 @@ export const ITIL_PROCESSES: ItilProcessDef[] = [
     english: "Capacity and Performance Management",
     description: "CPU, RAM, depolama ve trafik yükünün bugünü ve geleceği için kaynak planı.",
     href: "/surec/kapasite",
-    officer: "kapasite",
+    officer: "surec",
     group: "tasarim",
     statuses: ticketStatusOpts,
     extraFields: [
@@ -155,7 +155,7 @@ export const ITIL_PROCESSES: ItilProcessDef[] = [
     english: "Service Continuity Management",
     description: "Afet ve kriz anında hizmetin ayağa kaldırılması (felaket kurtarma) planı.",
     href: "/surec/sureklilik",
-    officer: "sureklilik",
+    officer: "surec",
     group: "tasarim",
     statuses: ticketStatusOpts,
     extraFields: [
@@ -180,7 +180,7 @@ export const ITIL_PROCESSES: ItilProcessDef[] = [
     english: "Service Validation and Testing",
     description: "Yeni veya değişen hizmetin canlıya alınmadan tasarım gereksinimlerini karşıladığını test eder.",
     href: "/surec/dogrulama",
-    officer: "dogrulama",
+    officer: "surec",
     group: "tasarim",
     statuses: ticketStatusOpts,
     extraFields: [
@@ -213,7 +213,7 @@ export const ITIL_PROCESSES: ItilProcessDef[] = [
     english: "Release Management",
     description: "Onaylı değişiklik, kod ve yamaların bir araya getirilip canlıya aktarılmaya hazırlanması.",
     href: "/surec/surum",
-    officer: "surum",
+    officer: "surec",
     group: "gecis",
     statuses: opt(RELEASE_STATUS_LABELS, RELEASE_STATUSES),
     extraFields: [
@@ -231,7 +231,7 @@ export const ITIL_PROCESSES: ItilProcessDef[] = [
     english: "Monitoring and Event Management",
     description: "Altyapıyı 7/24 izler; kesinti olmadan anormal log ve olayları ekibe iletir.",
     href: "/surec/izleme",
-    officer: "izleme",
+    officer: "surec",
     group: "operasyon",
     statuses: opt(MONITORING_STATUS_LABELS, MONITORING_STATUSES),
     extraFields: [
@@ -255,7 +255,7 @@ export const ITIL_PROCESSES: ItilProcessDef[] = [
     english: "Service Evaluation",
     description: "Yeni hizmetin hedeflenen iş değerini yaratıp yaratmadığını tarafsız değerlendirir.",
     href: "/surec/degerlendirme",
-    officer: "degerlendirme",
+    officer: "surec",
     group: "degerlendirme",
     statuses: ticketStatusOpts,
     extraFields: [

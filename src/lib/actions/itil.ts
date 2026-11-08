@@ -524,7 +524,7 @@ export async function saveConfig(_prev: ActionState, formData: FormData): Promis
     version: text(formData, "version"),
     ownerId,
     departmentId: firstFilled(text(formData, "departmentId"), ownerOrg.departmentId),
-    managerId: text(formData, "managerId") ?? (await resolveModuleManager("konfigurasyon", ownerId)) ?? ownerOrg.unitManagerId ?? null,
+    managerId: text(formData, "managerId") ?? (await resolveModuleManager("surec", ownerId)) ?? ownerOrg.unitManagerId ?? null,
     backupDate: dateVal(formData, "backupDate"),
     description: text(formData, "description"),
     ...(formData.has("assetId") || !id ? { assetId: text(formData, "assetId") } : {}),
