@@ -1293,6 +1293,22 @@ html[data-pattern="capraz"] .app-canvas {
 }
 @media print { html[data-pattern] body, html[data-pattern] .app-canvas { background-image: none; } }
 
+/* Fütüristik: temanın renklerinden türeyen geçişli ışık alanları + ince ızgara + ışık çizgileri */
+html[data-pattern="gelecek"] body,
+html[data-pattern="gelecek"] .app-canvas {
+  background-image:
+    radial-gradient(1100px 620px at 0% -5%, color-mix(in oklab, var(--primary) 20%, transparent), transparent 62%),
+    radial-gradient(900px 560px at 100% 105%, color-mix(in oklab, var(--chart-2) 18%, transparent), transparent 60%),
+    radial-gradient(700px 420px at 78% 8%, color-mix(in oklab, var(--chart-4) 12%, transparent), transparent 60%),
+    repeating-linear-gradient(115deg, transparent 0 140px, color-mix(in oklab, var(--primary) 9%, transparent) 140px 141px),
+    repeating-linear-gradient(115deg, transparent 0 46px, color-mix(in oklab, var(--foreground) 4%, transparent) 46px 47px),
+    linear-gradient(color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px);
+  background-size: auto, auto, auto, auto, auto, 56px 56px, 56px 56px;
+  background-attachment: fixed;
+}
+@media print { html[data-pattern="gelecek"] body, html[data-pattern="gelecek"] .app-canvas { background-image: none; } }
+
 /* ===== 4.1.1 hareketlilik ===== */
 
 /* Yükleme iskeleti */

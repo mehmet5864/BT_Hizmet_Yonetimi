@@ -1557,6 +1557,7 @@ export const EN_PHRASES: Record<string, string> = {
   "Rolleri yalnızca Süper Admin bağlar.": "Only the Super Admin binds roles.",
   "Talep karşılayan ekipler": "Request handling teams",
   "Varsayılan yöneticiler ve birim onaycıları": "Default managers and unit approvers",
+  "Fütüristik (geçişli renk + ışık çizgileri)": "Futuristic (gradient colors + light lines)",
 };
 
 /** Sayı veya değişken içeren metinler için kurallar: [regex, değiştirme]. */

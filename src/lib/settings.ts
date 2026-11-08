@@ -1,7 +1,7 @@
 import { ACL_VERSION, defaultModuleGrants, migrateGrants, normalizeGrants, type ModuleGrant } from "@/lib/auth/acl";
 import { DEFAULT_AD_ROLE_MAPS, type AdRoleMap } from "@/lib/auth/rbac";
 import type { PersonnelRole } from "@/lib/itil/constants";
-import { isProcessRole, type ProcessRoleMap } from "@/lib/itil/process-roles";
+import { normalizeProcessRole, type ProcessRoleMap } from "@/lib/itil/process-roles";
 import type { OfficeMap } from "@/lib/auth/office-map";
 import { REQUEST_OFFICES, type RequestOffice } from "@/lib/itil/request-types";
 import { defaultOfficeNames, mergeOfficeNames, type OfficeNames } from "@/lib/itil/office-names";
@@ -209,6 +209,17 @@ export function officerCount(officers: Officers) {
   return OFFICER_DEFS.filter((def) => officers[def.key]).length;
 }
 
+/** Birleştirilen eski roller aynı gruba bağlıysa çift kayıt kalmasın. */
+function dedupeProcessMaps(maps: ProcessRoleMap[]): ProcessRoleMap[] {
+  const seen = new Set<string>();
+  return maps.filter((m) => {
+    const k = `${m.group.trim().toLocaleLowerCase("tr-TR")}|${m.role}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 export const DEFAULT_SETTINGS: SystemSettings = {
   ad: {
     enabled: false,
@@ -280,7 +291,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   },
   appearance: {
     theme: "deniz",
-    pattern: "nokta",
+    pattern: "gelecek",
   },
   layout: {
     itilV2: true,
@@ -310,8 +321,11 @@ export function parseSettings(payload: string | null | undefined): SystemSetting
           ? raw.ad.roleMaps
           : DEFAULT_SETTINGS.ad.roleMaps,
         processRoleMaps: Array.isArray(raw.ad?.processRoleMaps)
-          ? raw.ad.processRoleMaps.filter(
-              (m): m is ProcessRoleMap => Boolean(m && typeof m.group === "string" && m.group.trim() && isProcessRole(String(m.role))),
+          ? dedupeProcessMaps(
+              raw.ad.processRoleMaps.flatMap((m): ProcessRoleMap[] => {
+                const role = m && typeof m.group === "string" && m.group.trim() ? normalizeProcessRole(String(m.role)) : null;
+                return role ? [{ group: m.group, role }] : [];
+              }),
             )
           : [],
         officeMaps: Array.isArray(raw.ad?.officeMaps)

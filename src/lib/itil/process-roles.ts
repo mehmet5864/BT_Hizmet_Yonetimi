@@ -1,8 +1,4 @@
 /**
- * ITIL süreç görevleri. Sistem rolünden (Süper admin, ServisAdmin, User, Manager, Supervisor) ayrı bir eksendir:
- * rol "ne tür kullanıcı", süreç görevi "hangi süreçte sorumlu" demektir. Kişiye elle ya da AD grubuyla atanır.
- */
-/**
  * ITIL süreç / modül yöneticisi rolleri. Sistem rolünden (Süper admin, ServisAdmin, User, Manager, Supervisor) ayrı bir eksendir:
  * sistem rolü "ne tür kullanıcı", süreç rolü "hangi süreçte sorumlu" demektir. Kişiye elle ya da AD grubuyla bağlanır.
  */
@@ -11,24 +7,14 @@ export const PROCESS_ROLES = [
   "PROBLEM_MGR",
   "CHANGE_MGR",
   "CAB_MEMBER",
-  "RELEASE_MGR",
   "PATCH_MGR",
   "CMDB_MGR",
   "ASSET_CONFIG_MGR",
   "CUSTODY_MGR",
   "SECURITY_MGR",
-  "VULN_MGR",
-  "MONITORING_MGR",
+  "PROCESS_MGR",
   "CATALOG_MGR",
-  "DESIGN_MGR",
   "SLM_MGR",
-  "AVAILABILITY_MGR",
-  "CAPACITY_MGR",
-  "CONTINUITY_MGR",
-  "TEST_MGR",
-  "EVAL_MGR",
-  "KB_MGR",
-  "FLOW_MGR",
   "AGILE_MGR",
   "REPORT_MGR",
   "PERSONNEL_MGR",
@@ -41,24 +27,14 @@ export const PROCESS_ROLE_LABELS: Record<ProcessRole, string> = {
   PROBLEM_MGR: "Problem yöneticisi",
   CHANGE_MGR: "Değişiklik yöneticisi",
   CAB_MEMBER: "CAB üyesi",
-  RELEASE_MGR: "Sürüm yöneticisi",
   PATCH_MGR: "Yama yöneticisi",
   CMDB_MGR: "Konfigürasyon (CMDB) yöneticisi",
   ASSET_CONFIG_MGR: "Envanter / varlık yöneticisi",
   CUSTODY_MGR: "Zimmet yöneticisi",
-  SECURITY_MGR: "Bilgi güvenliği yöneticisi (BGYS)",
-  VULN_MGR: "Zafiyet yöneticisi",
-  MONITORING_MGR: "İzleme (olay izleme) yöneticisi",
+  SECURITY_MGR: "Bilgi güvenliği ve zafiyet yöneticisi",
+  PROCESS_MGR: "Süreç yöneticisi (ITIL süreçleri)",
   CATALOG_MGR: "Hizmet kataloğu yöneticisi",
-  DESIGN_MGR: "Hizmet tasarımı yöneticisi",
   SLM_MGR: "Servis seviyesi / Firma-SLA yöneticisi",
-  AVAILABILITY_MGR: "Kullanılabilirlik yöneticisi",
-  CAPACITY_MGR: "Kapasite yöneticisi",
-  CONTINUITY_MGR: "Süreklilik (DR) yöneticisi",
-  TEST_MGR: "Doğrulama ve test yöneticisi",
-  EVAL_MGR: "Hizmet değerlendirme yöneticisi",
-  KB_MGR: "Bilgi bankası yöneticisi",
-  FLOW_MGR: "Süreç akışı yöneticisi",
   AGILE_MGR: "Çevik çalışma yöneticisi",
   REPORT_MGR: "Rapor yöneticisi",
   PERSONNEL_MGR: "Personel yöneticisi",
@@ -70,24 +46,14 @@ export const PROCESS_ROLE_CATEGORIES: Record<ProcessRole, string> = {
   PROBLEM_MGR: "Operasyon ve geçiş",
   CHANGE_MGR: "Operasyon ve geçiş",
   CAB_MEMBER: "Operasyon ve geçiş",
-  RELEASE_MGR: "Operasyon ve geçiş",
   PATCH_MGR: "Operasyon ve geçiş",
   CMDB_MGR: "Operasyon ve geçiş",
   ASSET_CONFIG_MGR: "Operasyon ve geçiş",
   CUSTODY_MGR: "Operasyon ve geçiş",
   SECURITY_MGR: "Operasyon ve geçiş",
-  VULN_MGR: "Operasyon ve geçiş",
-  MONITORING_MGR: "Operasyon ve geçiş",
+  PROCESS_MGR: "Operasyon ve geçiş",
   CATALOG_MGR: "Tasarım ve iyileştirme",
-  DESIGN_MGR: "Tasarım ve iyileştirme",
   SLM_MGR: "Tasarım ve iyileştirme",
-  AVAILABILITY_MGR: "Tasarım ve iyileştirme",
-  CAPACITY_MGR: "Tasarım ve iyileştirme",
-  CONTINUITY_MGR: "Tasarım ve iyileştirme",
-  TEST_MGR: "Tasarım ve iyileştirme",
-  EVAL_MGR: "Tasarım ve iyileştirme",
-  KB_MGR: "Destek",
-  FLOW_MGR: "Destek",
   AGILE_MGR: "Destek",
   REPORT_MGR: "Destek",
   PERSONNEL_MGR: "Destek",
@@ -99,24 +65,14 @@ export const PROCESS_ROLE_AD_HINTS: Record<ProcessRole, string> = {
   PROBLEM_MGR: "ProblemMgmt_Group",
   CHANGE_MGR: "ChangeMgmt_Group",
   CAB_MEMBER: "CAB_Group",
-  RELEASE_MGR: "ReleaseMgmt_Group",
   PATCH_MGR: "PatchMgmt_Group",
   CMDB_MGR: "CMDB_Group",
   ASSET_CONFIG_MGR: "AssetMgmt_Group",
   CUSTODY_MGR: "Custody_Group",
   SECURITY_MGR: "BGYS_Group",
-  VULN_MGR: "VulnMgmt_Group",
-  MONITORING_MGR: "Monitoring_Group",
+  PROCESS_MGR: "ITILProcess_Group",
   CATALOG_MGR: "ServiceCatalog_Group",
-  DESIGN_MGR: "ServiceDesign_Group",
   SLM_MGR: "SLM_Group",
-  AVAILABILITY_MGR: "Availability_Group",
-  CAPACITY_MGR: "Capacity_Group",
-  CONTINUITY_MGR: "Continuity_Group",
-  TEST_MGR: "Validation_Group",
-  EVAL_MGR: "Evaluation_Group",
-  KB_MGR: "KnowledgeBase_Group",
-  FLOW_MGR: "ProcessFlow_Group",
   AGILE_MGR: "Agile_Group",
   REPORT_MGR: "Reporting_Group",
   PERSONNEL_MGR: "HR_Group",
@@ -126,12 +82,33 @@ export function isProcessRole(value: string): value is ProcessRole {
   return (PROCESS_ROLES as readonly string[]).includes(value);
 }
 
+/** Birleştirilen eski roller (v1.1.0): kayıtlı kişi ve AD eşlemeleri yeni role taşınır. */
+const LEGACY_ROLE_ALIASES: Record<string, ProcessRole> = {
+  VULN_MGR: "SECURITY_MGR",
+  RELEASE_MGR: "PROCESS_MGR",
+  MONITORING_MGR: "PROCESS_MGR",
+  DESIGN_MGR: "PROCESS_MGR",
+  AVAILABILITY_MGR: "PROCESS_MGR",
+  CAPACITY_MGR: "PROCESS_MGR",
+  CONTINUITY_MGR: "PROCESS_MGR",
+  TEST_MGR: "PROCESS_MGR",
+  EVAL_MGR: "PROCESS_MGR",
+  KB_MGR: "PROCESS_MGR",
+  FLOW_MGR: "PROCESS_MGR",
+};
+
+/** Geçerli rolü (eski adlar dahil) güncel role çevirir; tanınmazsa null. */
+export function normalizeProcessRole(value: string): ProcessRole | null {
+  if (isProcessRole(value)) return value;
+  return LEGACY_ROLE_ALIASES[value] ?? null;
+}
+
 export function parseProcessRoles(raw: string | null | undefined): ProcessRole[] {
   if (!raw) return [];
   try {
     const value = JSON.parse(raw);
     if (!Array.isArray(value)) return [];
-    return [...new Set(value.map(String).filter(isProcessRole))];
+    return [...new Set(value.map((v) => normalizeProcessRole(String(v))).filter((v): v is ProcessRole => v !== null))];
   } catch {
     return [];
   }
@@ -151,9 +128,10 @@ export function mapAdGroupsToProcessRoles(groups: readonly string[], maps: reado
   const have = new Set(groups.map(norm));
   const out = new Set<ProcessRole>();
   for (const map of maps) {
-    if (!isProcessRole(map.role)) continue;
+    const role = normalizeProcessRole(String(map.role));
+    if (!role) continue;
     const needle = norm(map.group);
-    if (needle && have.has(needle)) out.add(map.role);
+    if (needle && have.has(needle)) out.add(role);
   }
   return [...out];
 }
@@ -179,24 +157,14 @@ export const PROCESS_ROLE_DEFAULTS: Record<ProcessRole, Partial<Record<string, "
   PROBLEM_MGR: { "problem": "ADMIN" },
   CHANGE_MGR: { "degisiklik": "ADMIN" },
   CAB_MEMBER: { "degisiklik": "HANDLE" },
-  RELEASE_MGR: { "surec": "HANDLE" },
   PATCH_MGR: { "yama": "ADMIN" },
   CMDB_MGR: { "konfigurasyon": "ADMIN" },
   ASSET_CONFIG_MGR: { "envanter": "ADMIN" },
   CUSTODY_MGR: { "envanter": "HANDLE" },
   SECURITY_MGR: { "zafiyet": "ADMIN" },
-  VULN_MGR: { "zafiyet": "ADMIN" },
-  MONITORING_MGR: { "surec": "HANDLE" },
+  PROCESS_MGR: { "surec": "ADMIN" },
   CATALOG_MGR: { "katalog": "ADMIN" },
-  DESIGN_MGR: { "surec": "HANDLE" },
   SLM_MGR: { "firma-sla": "ADMIN" },
-  AVAILABILITY_MGR: { "surec": "HANDLE" },
-  CAPACITY_MGR: { "surec": "HANDLE" },
-  CONTINUITY_MGR: { "surec": "HANDLE" },
-  TEST_MGR: { "surec": "HANDLE" },
-  EVAL_MGR: { "surec": "HANDLE" },
-  KB_MGR: { "surec": "HANDLE" },
-  FLOW_MGR: { "surec": "HANDLE" },
   AGILE_MGR: { "cevik": "ADMIN" },
   REPORT_MGR: { "raporlar": "ADMIN" },
   PERSONNEL_MGR: { "personel": "ADMIN" },

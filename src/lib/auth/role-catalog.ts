@@ -36,12 +36,17 @@ const TALEP: RoleDef[] = [
   { key: TEAM_KEY, kind: "team", label: "Talep karşılayan ekipler", category: "Talep işleme", description: "Hangi talep türünün hangi AD grubuna eskale edileceği (ör. Güvenlik duvarı → FW_Admins, NAC istisna → NAC_Admins). Eskalasyon gruba yapılır, kişiye değil.", bindable: true },
 ];
 
+const PROCESS_DESCRIPTIONS: Partial<Record<(typeof PROCESS_ROLES)[number], string>> = {
+  PROCESS_MGR: "Yayın, izleme, hizmet tasarımı, kullanılabilirlik, kapasite, süreklilik, test, değerlendirme, bilgi bankası ve süreç akışı süreçlerinin ortak yöneticisi.",
+  SECURITY_MGR: "Bilgi güvenliği (BGYS) ve zafiyet yönetimi: zafiyet modülünün yöneticisi.",
+};
+
 const PROCESS: RoleDef[] = PROCESS_ROLES.map((key) => ({
   key,
   kind: "process" as const,
   label: PROCESS_ROLE_LABELS[key],
   category: PROCESS_ROLE_CATEGORIES[key],
-  description: "",
+  description: PROCESS_DESCRIPTIONS[key] ?? "",
   adHint: PROCESS_ROLE_AD_HINTS[key],
   bindable: true,
 }));

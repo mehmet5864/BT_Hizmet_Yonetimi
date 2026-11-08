@@ -24,9 +24,9 @@ export const THEME_OPTIONS: { id: ThemeId; label: string; hint: string; swatches
   { id: "kizil", label: "Kızıl gece", hint: "Koyu bordo ve mercan", swatches: ["#150b0c", "#ff8a7a", "#33181a"] },
 ];
 
-export const PATTERNS = ["yok", "izgara", "nokta", "capraz"] as const;
+export const PATTERNS = ["yok", "izgara", "nokta", "capraz", "gelecek"] as const;
 export type PatternId = (typeof PATTERNS)[number];
-export const PATTERN_LABELS: Record<PatternId, string> = { yok: "Düz", izgara: "Izgara", nokta: "Noktalı", capraz: "Çapraz çizgi" };
+export const PATTERN_LABELS: Record<PatternId, string> = { yok: "Düz", izgara: "Izgara", nokta: "Noktalı", capraz: "Çapraz çizgi", gelecek: "Fütüristik (geçişli renk + ışık çizgileri)" };
 export function isPatternId(value: string | null | undefined): value is PatternId {
   return !!value && (PATTERNS as readonly string[]).includes(value);
 }

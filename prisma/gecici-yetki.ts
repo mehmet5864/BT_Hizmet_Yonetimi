@@ -10,7 +10,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
-const ALL = ["INCIDENT_MGR", "PROBLEM_MGR", "CHANGE_MGR", "RELEASE_MGR", "SECURITY_MGR", "ASSET_CONFIG_MGR", "SLM_MGR", "CAB_MEMBER"];
+const ALL = ["INCIDENT_MGR", "PROBLEM_MGR", "CHANGE_MGR", "PROCESS_MGR", "SECURITY_MGR", "ASSET_CONFIG_MGR", "SLM_MGR", "CAB_MEMBER"];
 
 async function main() {
   const name = process.argv[2];
