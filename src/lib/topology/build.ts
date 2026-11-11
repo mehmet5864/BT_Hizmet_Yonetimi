@@ -400,16 +400,37 @@ export async function buildServiceTopology(serviceId: string): Promise<TopoGraph
   const allPorts = new Set<string>();
   const adminSet = new Set<string>();
   const clientSet = new Set<string>();
-  const addAudience = (id: string, label: string, sub: string, kind: "CLIENT" | "ADMIN" | "PARTNER" | "OTHER", shape: TopoShape, ports: string, dashed: boolean, meta: [string, string][]) => {
-    const color = AUDIENCE_KIND_COLORS[kind];
-    const text = formatPorts(ports);
-    nodes.push({ id, shape, label, sub, col: 0, order: `${kind === "CLIENT" ? "1" : kind === "ADMIN" ? "2" : "3"}|${label}`, meta: [...meta, ["Portlar", text]] });
+  // Aynı türde ve aynı portlara izinli gruplar tek düğümde, tek bağlantı olarak gösterilir.
+  type AudienceItem = { id: string; label: string; sub: string; kind: "CLIENT" | "ADMIN" | "PARTNER" | "OTHER"; shape: TopoShape; ports: string; dashed: boolean; meta: [string, string][] };
+  const audienceItems: AudienceItem[] = [];
+  const addAudience = (id: string, label: string, sub: string, kind: AudienceItem["kind"], shape: TopoShape, ports: string, dashed: boolean, meta: [string, string][]) => {
+    audienceItems.push({ id, label, sub, kind, shape, ports, dashed, meta });
     ports.split(",").map((p) => p.trim()).filter(Boolean).forEach((p) => {
       allPorts.add(p);
       (kind === "ADMIN" ? adminSet : clientSet).add(p);
     });
+  };
+  const flushAudiences = () => {
+    const portKey = (ports: string) => [...new Set(ports.split(",").map((p) => p.trim().toLocaleLowerCase("tr-TR")).filter(Boolean))].sort().join(",");
+    const groups = new Map<string, AudienceItem[]>();
+    for (const it of audienceItems) {
+      const key = `${it.kind}|${it.dashed ? "t" : "k"}|${portKey(it.ports)}`;
+      groups.set(key, [...(groups.get(key) ?? []), it]);
+    }
     const targets = entries.length ? entries.map((n) => n.id) : [`s:${service.id}`];
-    for (const t of targets) edges.push({ id: `e:u:${id}>${t}`, from: id, to: t, label: text, color, dashed });
+    for (const items of groups.values()) {
+      const first = items[0];
+      const color = AUDIENCE_KIND_COLORS[first.kind];
+      const text = formatPorts(first.ports);
+      const many = items.length > 1;
+      const label = !many ? first.label : items.length === 2 ? `${items[0].label}, ${items[1].label}` : `${first.label} +${items.length - 1} grup`;
+      const sub = !many ? first.sub : `${items.length} grup · aynı portlar`;
+      const meta: [string, string][] = many
+        ? [["Gruplar", items.map((i) => i.label).join(", ")], ...first.meta.filter(([k]) => k !== "Grup" && k !== "Not").slice(0, 2)]
+        : first.meta;
+      nodes.push({ id: first.id, shape: many ? "group" : first.shape, label, sub, col: 0, order: `${first.kind === "CLIENT" ? "1" : first.kind === "ADMIN" ? "2" : "3"}|${first.label}`, meta: [...meta, ["Portlar", text]] });
+      for (const t of targets) edges.push({ id: `e:u:${first.id}>${t}`, from: first.id, to: t, label: text, color, dashed: first.dashed });
+    }
   };
 
   const explicit = service.accessRules;
@@ -447,6 +468,8 @@ export async function buildServiceTopology(serviceId: string): Promise<TopoGraph
       if (name) addAudience(`u:dept:${id}`, name, `${n} talep / olay`, "CLIENT", "department", clientPorts, true, [["Kaynak", "Hizmete açılan talep ve olay kayıtları"]]);
     }
   }
+
+  flushAudiences();
 
   // Katmanlar arası eksik bağlar: kenar → güvenlik duvarı → WAF/yük dengeleyici/omurga → sunucular
   const portText = formatPorts([...allPorts].join(", "));
